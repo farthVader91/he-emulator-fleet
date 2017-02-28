@@ -1,6 +1,8 @@
 import json
+import os
 import socket
 
+from settings import ROOT_DIR
 
 def is_open_port(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -33,7 +35,13 @@ def build_config(emulator):
 
 
 def read_config():
-    config_path = 
+    config_path = os.path.join(ROOT_DIR, 'worker',  'config.json')
+    assert os.path.exists(config_path), "Config file not provided for worker"
+    config = {}
+    with open(config_path) as source:
+        config = json.load(source)
+
+    return config
 
 
 if __name__ == '__main__':

@@ -16,8 +16,8 @@ else:
 from thrift.transport import TTransport, TSocket, TSSLSocket, THttpClient
 from thrift.protocol.TBinaryProtocol import TBinaryProtocol
 
-from worker_service import EndpointService
-from worker_service.ttypes import *
+from droid_service import DroidService
+from droid_service.ttypes import *
 
 if len(sys.argv) <= 1 or sys.argv[1] == '--help':
     print('')
@@ -105,7 +105,7 @@ else:
     else:
         transport = TTransport.TBufferedTransport(socket)
 protocol = TBinaryProtocol(transport)
-client = EndpointService.Client(protocol)
+client = DroidService.Client(protocol)
 transport.open()
 
 if cmd == 'ping':

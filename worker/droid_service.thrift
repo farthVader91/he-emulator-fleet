@@ -3,7 +3,7 @@ struct ConnParams {
   2: i32 port,
 }
 
-service EndpointService {
+service DroidService {
    void ping(),
 
    string get_package_name(1: string apk_url),

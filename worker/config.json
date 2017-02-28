@@ -3,7 +3,7 @@
         {
             "name": "r2-d2",
             "port": "5554",
-            "avd": "nexus6-android7"
+            "avd": "Nexus_6_API_25"
         }
     ]
 }
