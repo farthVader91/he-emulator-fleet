@@ -1,6 +1,6 @@
 struct ConnParams {
   1: string host,
-  2: i32 port,
+  2: string port,
 }
 
 service DroidService {

@@ -1,7 +1,7 @@
 from logger import logger
 from worker.factory import EndpointFactory
 from worker.helpers import EndpointCoordinator, EndpointBuilder
-from worker.utils import read_config
+from worker.utils import get_config, get_public_hostname
 
 from tgen.droid_service.ttypes import ConnParams
 from tgen.droid_service import DroidService
@@ -18,7 +18,7 @@ class DroidServiceHandler(object):
 
     def setup(self):
         logger.debug('Setting up droids')
-        config = read_config()
+        config = get_config()
         builder = EndpointBuilder()
         for droid in config['droids']:
             if droid['port']:
@@ -26,28 +26,29 @@ class DroidServiceHandler(object):
             if droid['avd']:
                 builder.set_avd(droid['avd'])
             self.coordinator.set_endpoint(droid['name'], builder.build())
-        # Start all instances now
-        self.coordinator.start_all_instances()
+        # Start all endpoints now
+        self.coordinator.setup()
 
     def ping(self):
         logger.debug('Ping!')
 
-    def get_package_name(apk_url):
+    def get_package_name(self, apk_url):
         logger.debug("getting package name for apk {}".format(apk_url))
         return "some random package"
 
-    def get_endpoint(endpoint_id):
+    def get_endpoint(self, endpoint_id):
         logger.debug("Getting endpoint for {}".format(endpoint_id))
+        endpoint = self.coordinator.get_endpoint(endpoint_id)
         cp = ConnParams()
-        cp.host = 'deathstart'
-        cp.port = 54321
+        cp.host = get_public_hostname()
+        cp.port = endpoint.port
         return cp
 
-    def install_apk(endpoint_id, apk_url):
+    def install_apk(self, endpoint_id, apk_url):
         logger.debug("installing apk in {}".format(endpoint_id))
         return True
 
-    def start_package(endpoint_id, package_name):
+    def start_package(self, endpoint_id, package_name):
         logger.debug("Starting package {} for {}".format(package_name, endpoint_id))
         return True
 
@@ -55,12 +56,18 @@ class DroidServiceHandler(object):
         logger.debug("{} droid(s) at your service".format(
             self.coordinator.get_num_endpoints()))
 
+    def teardown(self):
+        self.coordinator.teardown()
+
 
 def start_server():
     handler = DroidServiceHandler()
     handler.setup()
     processor = DroidService.Processor(handler)
-    transport = TSocket.TServerSocket(port=9090)
+    config = get_config()
+    transport = TSocket.TServerSocket(
+        host=config['thrift_port'],
+        port=int(config['thrift_port']))
     tfactory = TTransport.TBufferedTransportFactory()
     pfactory = TBinaryProtocol.TBinaryProtocolFactory()
 

@@ -23,7 +23,7 @@ class ConnParams(object):
     thrift_spec = (
         None,  # 0
         (1, TType.STRING, 'host', 'UTF8', None, ),  # 1
-        (2, TType.I32, 'port', None, None, ),  # 2
+        (2, TType.STRING, 'port', 'UTF8', None, ),  # 2
     )
 
     def __init__(self, host=None, port=None,):
@@ -45,8 +45,8 @@ class ConnParams(object):
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
-                if ftype == TType.I32:
-                    self.port = iprot.readI32()
+                if ftype == TType.STRING:
+                    self.port = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -64,8 +64,8 @@ class ConnParams(object):
             oprot.writeString(self.host.encode('utf-8') if sys.version_info[0] == 2 else self.host)
             oprot.writeFieldEnd()
         if self.port is not None:
-            oprot.writeFieldBegin('port', TType.I32, 2)
-            oprot.writeI32(self.port)
+            oprot.writeFieldBegin('port', TType.STRING, 2)
+            oprot.writeString(self.port.encode('utf-8') if sys.version_info[0] == 2 else self.port)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()

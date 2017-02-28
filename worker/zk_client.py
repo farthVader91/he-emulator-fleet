@@ -3,23 +3,10 @@ import os
 
 from kazoo.client import KazooClient, KazooState
 from kazoo.protocol.states import EventType
-from twisted.internet import reactor
 
 from logger import logger
 from worker.emulator import Emulator
-from worker.utils import build_config
-
-
-NODENAME = os.environ.get('EMU_NODE', 'droid1')
-zk = KazooClient()
-em = Emulator()
-
-
-def initialize():
-    em.start()
-    zk.create('/droids/available/{}'.format(NODENAME),
-              value=json.dumps(build_config(em)),
-              makepath=True, ephemeral=True)
+from worker.utils import get_config, get_public_hostname
 
 
 def conn_listener(state):
@@ -31,32 +18,36 @@ def conn_listener(state):
         logger.debug('connection suspended...')
 
 
-@zk.DataWatch('/droids/synchronize/{}'.format(NODENAME))
-def on_sync(data, stat, event):
-    if event:
-        if event.type in [EventType.CREATED, EventType.CHANGED]:
-            logger.log('Synchronizing state')
-            data = json.loads(data)
-            for apk in data['installed_apks']:
-                em.load_apk(apk)
-            # Set node in synchronized
-            path = '/droids/synchronized/{}'.format(NODENAME)
-            if zk.exists(path):
-                zk.set(path, data)
-            else:
-                zk.create(path, value=data, ephemeral=True)
+class DroidZkClient(object):
+    def __init__(self, nodename):
+        self.nodename = nodename
 
+        config = get_config()
+        host='{}:{}'.format(config['zk_host'], config['zk_port'])
+        zk = KazooClient(host)
+        zk.add_listener(conn_listener)
+        self.zk = zk
 
-def cleanup():
-    zk.stop()
-    em.stop()
+    def setup(self):
+        logger.debug('Registering onto zookeeper')
+        self.zk.start()
+        config = get_config()
+        value = {
+            'thrift_host': get_public_hostname(),
+            'thrift_port': config['thrift_port'],
+        }
+        self.zk.create('/droids/available/{}'.format(self.nodename),
+                        value=json.dumps(value),
+                        makepath=True, ephemeral=True)
 
-
-zk.add_listener(conn_listener)
+    def teardown(self):
+        self.zk.stop()
 
 
 if __name__ == '__main__':
-    zk.start()
-    initialize()
-    reactor.addSystemEventTrigger('before', 'shutdown', cleanup)
+    c = DroidZkClient('droid1')
+    c.setup()
+    from twisted.internet import reactor
+    
+    reactor.addSystemEventTrigger('before', 'shutdown', c.teardown)
     reactor.run()
