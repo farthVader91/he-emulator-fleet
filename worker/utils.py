@@ -16,29 +16,32 @@ def is_open_port(port):
     return result != 0  # Implies port is being used
 
 
-_HOSTNAME = None
+class CachedGlobals:
+    HOSTNAME = None
+    CONFIG = None
+
+
 def get_public_hostname():
-    if _HOSTNAME is None:
+    if CachedGlobals.HOSTNAME is None:
         try:
             resp = requests.get("http://169.254.169.254/latest/meta-data/public-host",
                                 timeout=(3, 2))
             if resp.status == 200:
-                _HOSTNAME = resp.text
+                CachedGlobals.HOSTNAME = resp.text
         except ConnectTimeout:
-            _HOSTNAME = socket.gethostname()
+            CachedGlobals.HOSTNAME = socket.gethostname()
 
-    return _HOSTNAME
+    return CachedGlobals.HOSTNAME
 
 
-_CONFIG = None
 def get_config():
-    if _CONFIG is None:
+    if CachedGlobals.CONFIG is None:
         config_path = os.path.join(ROOT_DIR, 'worker',  'config.json')
         assert os.path.exists(config_path), "Config file not provided for worker"
         with open(config_path) as source:
-            _CONFIG = json.load(source)
+            CachedGlobals.CONFIG = json.load(source)
 
-    return deepcopy(_CONFIG)
+    return deepcopy(CachedGlobals.CONFIG)
 
 
 if __name__ == '__main__':

@@ -35,9 +35,9 @@ class DroidCoordinator(object):
         return self.instances[id]['endpoint']
 
     def get_zk_client(self, id):
-        return self.instances[id]['zl_client']
+        return self.instances[id]['zk_client']
 
-    def get_num_endpoints(self):
+    def count(self):
         return len(self.instances)
 
     def start_endpoint(self, id):
@@ -52,7 +52,7 @@ class DroidCoordinator(object):
         return self.instances.iteritems()
 
     def setup(self):
-        for instance_id, _ in self.iter_instances():
+        for instance_id, _ in self.iter_endpoints():
             self.start_endpoint(instance_id)
 
     def stop_endpoint(self, id):
@@ -64,7 +64,7 @@ class DroidCoordinator(object):
         zk_client.teardown()
 
     def teardown(self):
-        for instance_id, _ in self.iter_instances():
+        for instance_id, _ in self.iter_endpoints():
             self.stop_endpoint(instance_id)
 
     

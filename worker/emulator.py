@@ -68,6 +68,10 @@ class Emulator(object):
         OutputExecutor(cmd, banner=r"Success").start()
         return True
 
+    def stop(self):
+        logger.debug('Stopping emulator')
+        self._proc.stop()
+
 
 if __name__ == '__main__':
     em = Emulator()

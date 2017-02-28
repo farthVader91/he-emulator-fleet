@@ -1,6 +1,7 @@
+import atexit
+
 from logger import logger
-from worker.factory import EndpointFactory
-from worker.helpers import EndpointCoordinator, EndpointBuilder
+from worker.helpers import DroidCoordinator, DroidBuilder
 from worker.utils import get_config, get_public_hostname
 
 from tgen.droid_service.ttypes import ConnParams
@@ -14,12 +15,12 @@ from thrift.server import TServer
 
 class DroidServiceHandler(object):
     def __init__(self):
-        self.coordinator = EndpointCoordinator()
+        self.coordinator = DroidCoordinator()
 
     def setup(self):
         logger.debug('Setting up droids')
         config = get_config()
-        builder = EndpointBuilder()
+        builder = DroidBuilder()
         for droid in config['droids']:
             if droid['port']:
                 builder.set_port(droid['port'])
@@ -54,19 +55,21 @@ class DroidServiceHandler(object):
 
     def pre_server_start_log(self):
         logger.debug("{} droid(s) at your service".format(
-            self.coordinator.get_num_endpoints()))
+            self.coordinator.count()))
 
     def teardown(self):
+        logger.debug("Running teardown operations")
         self.coordinator.teardown()
 
 
 def start_server():
     handler = DroidServiceHandler()
     handler.setup()
+    atexit.register(handler.teardown)
     processor = DroidService.Processor(handler)
     config = get_config()
     transport = TSocket.TServerSocket(
-        host=config['thrift_port'],
+        host=config['thrift_host'],
         port=int(config['thrift_port']))
     tfactory = TTransport.TBufferedTransportFactory()
     pfactory = TBinaryProtocol.TBinaryProtocolFactory()
