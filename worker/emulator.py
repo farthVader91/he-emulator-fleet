@@ -47,9 +47,9 @@ class EmulatorExecutor(Executor):
 
 
 class Emulator(object):
-    def __init__(self):
-        self.port = os.environ.get('ADB_PORT', '5554')
-        self.avd = os.environ.get('AVD_NAME', 'nexus6-android7')
+    def __init__(self, port=None, avd=None):
+        self.port = port or os.environ.get('ADB_PORT', '5554')
+        self.avd = avd or os.environ.get('AVD_NAME', 'nexus6-android7')
         self._proc = None
 
     def start(self):

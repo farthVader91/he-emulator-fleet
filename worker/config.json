@@ -1,0 +1,9 @@
+{
+    "droids": [
+        {
+            "name": "r2-d2",
+            "port": "5554",
+            "avd": "nexus6-android7"
+        }
+    ]
+}

@@ -5,9 +5,9 @@ from kazoo.client import KazooClient, KazooState
 from kazoo.protocol.states import EventType
 from twisted.internet import reactor
 
-from emulator import Emulator
 from logger import logger
-from utils import build_config
+from worker.emulator import Emulator
+from worker.utils import build_config
 
 
 NODENAME = os.environ.get('EMU_NODE', 'droid1')
