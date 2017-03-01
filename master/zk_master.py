@@ -6,24 +6,14 @@ from kazoo.protocol.states import EventType
 from kazoo.recipe.watchers import ChildrenWatch, DataWatch
 
 from logger import logger
-from master.settings import ZOOKEEPER_HOST, ZOOKEEPER_PORT
+from common_settings import ZK_HOST, ZK_PORT
 
 
 class MasterZkClient(object):
     def __init__(self):
-        host = '{}:{}'.format(ZOOKEEPER_HOST, ZOOKEEPER_PORT)
+        host = '{}:{}'.format(ZK_HOST, ZK_PORT)
         zk = KazooClient(host)
         zk.add_listener(self.conn_listener)
-        self.on_running_droid = ChildrenWatch(
-            zk,
-            '/droids/running',
-            self.on_runnning_droid,
-        )
-        self.on_assigned_droid = ChildrenWatch(
-            zk,
-            '/droids/assigned',
-            self.on_assigned_droid,
-        )
         self.zk = zk
 
     def setup(self):
@@ -32,6 +22,19 @@ class MasterZkClient(object):
         self.zk.ensure_path('/droids/running')
         self.zk.ensure_path('/droids/free')
         self.zk.ensure_path('/droids/assigned')
+
+        # Register watches
+        self.on_running_droid = ChildrenWatch(
+            self.zk,
+            '/droids/running',
+            self.on_running_droid,
+            send_event=True
+        )
+        self.on_assigned_droid = ChildrenWatch(
+            self.zk,
+            '/droids/assigned',
+            self.on_assigned_droid,
+        )
 
     @staticmethod
     def conn_listener(state):
@@ -42,11 +45,20 @@ class MasterZkClient(object):
         elif state == KazooState.SUSPENDED:
             logger.debug('connection suspended...')
 
-    def on_running_droid(self, children):
+    def on_running_droid(self, children, event):
+        if not event:
+            return
         logger.debug('Registering watches on running droids')
-        for child in children:
-            child_p = '/droids/running/{}'.format(child)
-            DataWatch(self.zk, child_p, self.on_running_droid_change)
+        assigned_droids = self.zk.get_children('/droids/assigned')
+        free_doids = set(children) - set(assigned_droids)
+        for droid in free_doids:
+            # Implies a new droid became available
+            logger.debug('WooHoo! Another droid joins our ranks!')
+            # Create corresponding node in /droids/free
+            free_p = '/droids/free/{}'.format(droid)
+            self.zk.ensure_path(free_p)
+            droid_p = '/droids/running/{}'.format(droid)
+            DataWatch(self.zk, droid_p, self.on_running_droid_change)
 
     def on_assigned_droid(self, children):
         logger.debug('Registering watches on assigned droids')
@@ -57,13 +69,7 @@ class MasterZkClient(object):
     def on_running_droid_change(self, data, stat, event):
         if event:
             node_name = event.path.rsplit('/', 1)[1]
-            if event.type == EventType.CREATED:
-                # Implies a new droid became available
-                logger.debug('WooHoo! Another droid joins our ranks!')
-                # Create corresponding node in /droids/free
-                free_p = '/droids/free/{}'.format(node_name)
-                self.zk.ensure_path(free_p)
-            elif event.type == EventType.DELETED:
+            if event.type == EventType.DELETED:
                 # Implies an existing droid was disconnected
                 # Attempt to drop it from running/assigned
                 try:

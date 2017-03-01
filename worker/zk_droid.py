@@ -4,7 +4,7 @@ from kazoo.client import KazooClient, KazooState
 
 from logger import logger
 from worker.utils import get_config, get_public_hostname
-from settings import ZK_HOST, ZK_PORT
+from common_settings import ZK_HOST, ZK_PORT
 
 
 class DroidZkClient(object):

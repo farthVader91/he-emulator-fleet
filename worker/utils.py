@@ -9,7 +9,7 @@ import requests
 from mirakuru import SimpleExecutor
 from requests.exceptions import ConnectTimeout
 
-from settings import ROOT_DIR
+from common_settings import ROOT_DIR
 from logger import logger
 
 

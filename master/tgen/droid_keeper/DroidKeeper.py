@@ -29,26 +29,10 @@ class Iface:
     """
     pass
 
-  def get_endpoint(self, endpoint_id):
+  def get_endpoint(self, user):
     """
     Parameters:
-     - endpoint_id
-    """
-    pass
-
-  def install_apk(self, endpoint_id, apk_url):
-    """
-    Parameters:
-     - endpoint_id
-     - apk_url
-    """
-    pass
-
-  def start_package(self, endpoint_id, package_name):
-    """
-    Parameters:
-     - endpoint_id
-     - package_name
+     - user
     """
     pass
 
@@ -115,18 +99,18 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "get_package_name failed: unknown result")
 
-  def get_endpoint(self, endpoint_id):
+  def get_endpoint(self, user):
     """
     Parameters:
-     - endpoint_id
+     - user
     """
-    self.send_get_endpoint(endpoint_id)
+    self.send_get_endpoint(user)
     return self.recv_get_endpoint()
 
-  def send_get_endpoint(self, endpoint_id):
+  def send_get_endpoint(self, user):
     self._oprot.writeMessageBegin('get_endpoint', TMessageType.CALL, self._seqid)
     args = get_endpoint_args()
-    args.endpoint_id = endpoint_id
+    args.user = user
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
@@ -146,72 +130,6 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "get_endpoint failed: unknown result")
 
-  def install_apk(self, endpoint_id, apk_url):
-    """
-    Parameters:
-     - endpoint_id
-     - apk_url
-    """
-    self.send_install_apk(endpoint_id, apk_url)
-    return self.recv_install_apk()
-
-  def send_install_apk(self, endpoint_id, apk_url):
-    self._oprot.writeMessageBegin('install_apk', TMessageType.CALL, self._seqid)
-    args = install_apk_args()
-    args.endpoint_id = endpoint_id
-    args.apk_url = apk_url
-    args.write(self._oprot)
-    self._oprot.writeMessageEnd()
-    self._oprot.trans.flush()
-
-  def recv_install_apk(self):
-    iprot = self._iprot
-    (fname, mtype, rseqid) = iprot.readMessageBegin()
-    if mtype == TMessageType.EXCEPTION:
-      x = TApplicationException()
-      x.read(iprot)
-      iprot.readMessageEnd()
-      raise x
-    result = install_apk_result()
-    result.read(iprot)
-    iprot.readMessageEnd()
-    if result.success is not None:
-      return result.success
-    raise TApplicationException(TApplicationException.MISSING_RESULT, "install_apk failed: unknown result")
-
-  def start_package(self, endpoint_id, package_name):
-    """
-    Parameters:
-     - endpoint_id
-     - package_name
-    """
-    self.send_start_package(endpoint_id, package_name)
-    return self.recv_start_package()
-
-  def send_start_package(self, endpoint_id, package_name):
-    self._oprot.writeMessageBegin('start_package', TMessageType.CALL, self._seqid)
-    args = start_package_args()
-    args.endpoint_id = endpoint_id
-    args.package_name = package_name
-    args.write(self._oprot)
-    self._oprot.writeMessageEnd()
-    self._oprot.trans.flush()
-
-  def recv_start_package(self):
-    iprot = self._iprot
-    (fname, mtype, rseqid) = iprot.readMessageBegin()
-    if mtype == TMessageType.EXCEPTION:
-      x = TApplicationException()
-      x.read(iprot)
-      iprot.readMessageEnd()
-      raise x
-    result = start_package_result()
-    result.read(iprot)
-    iprot.readMessageEnd()
-    if result.success is not None:
-      return result.success
-    raise TApplicationException(TApplicationException.MISSING_RESULT, "start_package failed: unknown result")
-
 
 class Processor(Iface, TProcessor):
   def __init__(self, handler):
@@ -220,8 +138,6 @@ class Processor(Iface, TProcessor):
     self._processMap["ping"] = Processor.process_ping
     self._processMap["get_package_name"] = Processor.process_get_package_name
     self._processMap["get_endpoint"] = Processor.process_get_endpoint
-    self._processMap["install_apk"] = Processor.process_install_apk
-    self._processMap["start_package"] = Processor.process_start_package
 
   def process(self, iprot, oprot):
     (name, type, seqid) = iprot.readMessageBegin()
@@ -282,7 +198,7 @@ class Processor(Iface, TProcessor):
     iprot.readMessageEnd()
     result = get_endpoint_result()
     try:
-      result.success = self._handler.get_endpoint(args.endpoint_id)
+      result.success = self._handler.get_endpoint(args.user)
       msg_type = TMessageType.REPLY
     except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
       raise
@@ -291,44 +207,6 @@ class Processor(Iface, TProcessor):
       logging.exception(ex)
       result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
     oprot.writeMessageBegin("get_endpoint", msg_type, seqid)
-    result.write(oprot)
-    oprot.writeMessageEnd()
-    oprot.trans.flush()
-
-  def process_install_apk(self, seqid, iprot, oprot):
-    args = install_apk_args()
-    args.read(iprot)
-    iprot.readMessageEnd()
-    result = install_apk_result()
-    try:
-      result.success = self._handler.install_apk(args.endpoint_id, args.apk_url)
-      msg_type = TMessageType.REPLY
-    except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
-      raise
-    except Exception as ex:
-      msg_type = TMessageType.EXCEPTION
-      logging.exception(ex)
-      result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
-    oprot.writeMessageBegin("install_apk", msg_type, seqid)
-    result.write(oprot)
-    oprot.writeMessageEnd()
-    oprot.trans.flush()
-
-  def process_start_package(self, seqid, iprot, oprot):
-    args = start_package_args()
-    args.read(iprot)
-    iprot.readMessageEnd()
-    result = start_package_result()
-    try:
-      result.success = self._handler.start_package(args.endpoint_id, args.package_name)
-      msg_type = TMessageType.REPLY
-    except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
-      raise
-    except Exception as ex:
-      msg_type = TMessageType.EXCEPTION
-      logging.exception(ex)
-      result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
-    oprot.writeMessageBegin("start_package", msg_type, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -560,16 +438,16 @@ class get_package_name_result:
 class get_endpoint_args:
   """
   Attributes:
-   - endpoint_id
+   - user
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRING, 'endpoint_id', None, None, ), # 1
+    (1, TType.STRING, 'user', None, None, ), # 1
   )
 
-  def __init__(self, endpoint_id=None,):
-    self.endpoint_id = endpoint_id
+  def __init__(self, user=None,):
+    self.user = user
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -582,7 +460,7 @@ class get_endpoint_args:
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.endpoint_id = iprot.readString()
+          self.user = iprot.readString()
         else:
           iprot.skip(ftype)
       else:
@@ -595,9 +473,9 @@ class get_endpoint_args:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('get_endpoint_args')
-    if self.endpoint_id is not None:
-      oprot.writeFieldBegin('endpoint_id', TType.STRING, 1)
-      oprot.writeString(self.endpoint_id)
+    if self.user is not None:
+      oprot.writeFieldBegin('user', TType.STRING, 1)
+      oprot.writeString(self.user)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -608,7 +486,7 @@ class get_endpoint_args:
 
   def __hash__(self):
     value = 17
-    value = (value * 31) ^ hash(self.endpoint_id)
+    value = (value * 31) ^ hash(self.user)
     return value
 
   def __repr__(self):
@@ -663,290 +541,6 @@ class get_endpoint_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.STRUCT, 0)
       self.success.write(oprot)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    return
-
-
-  def __hash__(self):
-    value = 17
-    value = (value * 31) ^ hash(self.success)
-    return value
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class install_apk_args:
-  """
-  Attributes:
-   - endpoint_id
-   - apk_url
-  """
-
-  thrift_spec = (
-    None, # 0
-    (1, TType.STRING, 'endpoint_id', None, None, ), # 1
-    (2, TType.STRING, 'apk_url', None, None, ), # 2
-  )
-
-  def __init__(self, endpoint_id=None, apk_url=None,):
-    self.endpoint_id = endpoint_id
-    self.apk_url = apk_url
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
-        if ftype == TType.STRING:
-          self.endpoint_id = iprot.readString()
-        else:
-          iprot.skip(ftype)
-      elif fid == 2:
-        if ftype == TType.STRING:
-          self.apk_url = iprot.readString()
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('install_apk_args')
-    if self.endpoint_id is not None:
-      oprot.writeFieldBegin('endpoint_id', TType.STRING, 1)
-      oprot.writeString(self.endpoint_id)
-      oprot.writeFieldEnd()
-    if self.apk_url is not None:
-      oprot.writeFieldBegin('apk_url', TType.STRING, 2)
-      oprot.writeString(self.apk_url)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    return
-
-
-  def __hash__(self):
-    value = 17
-    value = (value * 31) ^ hash(self.endpoint_id)
-    value = (value * 31) ^ hash(self.apk_url)
-    return value
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class install_apk_result:
-  """
-  Attributes:
-   - success
-  """
-
-  thrift_spec = (
-    (0, TType.BOOL, 'success', None, None, ), # 0
-  )
-
-  def __init__(self, success=None,):
-    self.success = success
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 0:
-        if ftype == TType.BOOL:
-          self.success = iprot.readBool()
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('install_apk_result')
-    if self.success is not None:
-      oprot.writeFieldBegin('success', TType.BOOL, 0)
-      oprot.writeBool(self.success)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    return
-
-
-  def __hash__(self):
-    value = 17
-    value = (value * 31) ^ hash(self.success)
-    return value
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class start_package_args:
-  """
-  Attributes:
-   - endpoint_id
-   - package_name
-  """
-
-  thrift_spec = (
-    None, # 0
-    (1, TType.STRING, 'endpoint_id', None, None, ), # 1
-    (2, TType.STRING, 'package_name', None, None, ), # 2
-  )
-
-  def __init__(self, endpoint_id=None, package_name=None,):
-    self.endpoint_id = endpoint_id
-    self.package_name = package_name
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
-        if ftype == TType.STRING:
-          self.endpoint_id = iprot.readString()
-        else:
-          iprot.skip(ftype)
-      elif fid == 2:
-        if ftype == TType.STRING:
-          self.package_name = iprot.readString()
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('start_package_args')
-    if self.endpoint_id is not None:
-      oprot.writeFieldBegin('endpoint_id', TType.STRING, 1)
-      oprot.writeString(self.endpoint_id)
-      oprot.writeFieldEnd()
-    if self.package_name is not None:
-      oprot.writeFieldBegin('package_name', TType.STRING, 2)
-      oprot.writeString(self.package_name)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    return
-
-
-  def __hash__(self):
-    value = 17
-    value = (value * 31) ^ hash(self.endpoint_id)
-    value = (value * 31) ^ hash(self.package_name)
-    return value
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class start_package_result:
-  """
-  Attributes:
-   - success
-  """
-
-  thrift_spec = (
-    (0, TType.BOOL, 'success', None, None, ), # 0
-  )
-
-  def __init__(self, success=None,):
-    self.success = success
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 0:
-        if ftype == TType.BOOL:
-          self.success = iprot.readBool()
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('start_package_result')
-    if self.success is not None:
-      oprot.writeFieldBegin('success', TType.BOOL, 0)
-      oprot.writeBool(self.success)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()

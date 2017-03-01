@@ -67,7 +67,5 @@ class DroidCoordinator(object):
         return self.initialised.iterkeys()
 
     def teardown(self):
-        for instance_id, _ in self.iter_droid_ids():
+        for instance_id in self.iter_droid_ids():
             self.stop_droid(instance_id)
-
-    

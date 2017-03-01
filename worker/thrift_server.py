@@ -5,8 +5,8 @@ from worker.helpers import DroidCoordinator, DroidBuilder
 from worker.utils import get_config, get_public_hostname
 from worker.utils import get_package_name_from_url
 
-from tgen.droid_service.ttypes import ConnParams
-from tgen.droid_service import DroidService
+from worker.tgen.droid_service.ttypes import ConnParams
+from worker.tgen.droid_service import DroidService
 
 from thrift.transport import TSocket
 from thrift.transport import TTransport
@@ -51,7 +51,8 @@ class DroidServiceHandler(object):
         return True
 
     def start_package(self, endpoint_id, package_name):
-        logger.debug("Starting package {} for {}".format(package_name, endpoint_id))
+        logger.debug(
+            "Starting package {} for {}".format(package_name, endpoint_id))
         return True
 
     def pre_server_start_log(self):
