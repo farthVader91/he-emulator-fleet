@@ -1,8 +1,9 @@
 import json
 
 from kazoo.client import KazooClient, KazooState
+from kazoo.exceptions import NoNodeError
 from kazoo.protocol.states import EventType
-from kazoo.recipe.watchers import DataWatch
+from kazoo.recipe.watchers import ChildrenWatch, DataWatch
 
 from logger import logger
 from master.settings import ZOOKEEPER_HOST, ZOOKEEPER_PORT
@@ -10,18 +11,26 @@ from master.settings import ZOOKEEPER_HOST, ZOOKEEPER_PORT
 
 class MasterZkClient(object):
     def __init__(self):
-        host='{}:{}'.format(ZOOKEEPER_HOST, ZOOKEEPER_PORT)
+        host = '{}:{}'.format(ZOOKEEPER_HOST, ZOOKEEPER_PORT)
         zk = KazooClient(host)
         zk.add_listener(self.conn_listener)
-        self.zk = zk
-        self.on_available_droid = ChildrenWatch(
+        self.on_running_droid = ChildrenWatch(
             zk,
-            '/droids/available',
-            self.on_available_droid,
+            '/droids/running',
+            self.on_runnning_droid,
         )
+        self.on_assigned_droid = ChildrenWatch(
+            zk,
+            '/droids/assigned',
+            self.on_assigned_droid,
+        )
+        self.zk = zk
 
     def setup(self):
-        self.zk.ensure_path('/droids/available')
+        logger.debug('Setting up directories and nodes')
+        self.zk.start()
+        self.zk.ensure_path('/droids/running')
+        self.zk.ensure_path('/droids/free')
         self.zk.ensure_path('/droids/assigned')
 
     @staticmethod
@@ -33,60 +42,91 @@ class MasterZkClient(object):
         elif state == KazooState.SUSPENDED:
             logger.debug('connection suspended...')
 
-
-    def on_available_droid(self, children):
-        logger.debug('Registering watches on available droids')
+    def on_running_droid(self, children):
+        logger.debug('Registering watches on running droids')
         for child in children:
-            child_p = '/droids/available/{}'.format(child)
-            DataWatch(self.zk, child_p, self.handle_dropped_droid)
+            child_p = '/droids/running/{}'.format(child)
+            DataWatch(self.zk, child_p, self.on_running_droid_change)
 
+    def on_assigned_droid(self, children):
+        logger.debug('Registering watches on assigned droids')
+        for child in children:
+            child_p = '/droids/assigned/{}'.format(child)
+            DataWatch(self.zk, child_p, self.on_assigned_droid_change)
 
-    def handle_dropped_droid(self, data, stat, event):
+    def on_running_droid_change(self, data, stat, event):
         if event:
+            node_name = event.path.rsplit('/', 1)[1]
             if event.type == EventType.CREATED:
                 # Implies a new droid became available
                 logger.debug('WooHoo! Another droid joins our ranks!')
+                # Create corresponding node in /droids/free
+                free_p = '/droids/free/{}'.format(node_name)
+                self.zk.ensure_path(free_p)
             elif event.type == EventType.DELETED:
                 # Implies an existing droid was disconnected
-                # Check if it was assigned and remove it from there.
-                node_name = event.path.rsplit('/', 1)[1]
-                assigned_emulators = self.zk.get_children('/droids/assigned')
-                if node_name in assigned_emulators:
-                    # Check if droid was being assigned, by comparing creation
-                    # times.
+                # Attempt to drop it from running/assigned
+                try:
+                    free_p = '/droids/free/{}'.format(node_name)
+                    self.zk.delete(free_p)
+                except NoNodeError:
+                    logger.debug('{} was not free'.format(node_name))
+                try:
                     assigned_p = '/droids/assigned/{}'.format(node_name)
-                    adata, astat = self.zk.get(assigned_p)
-                    import ipdb; ipdb.set_trace()
-                    logger.error('Oh no, droid-{} was lost'.format(node_name))
                     self.zk.delete(assigned_p)
+                except NoNodeError:
+                    logger.debug('{} was not assigned'.format(node_name))
+            else:
+                logger.debug('These are not the events you are looking for.')
+
+    def on_assigned_droid_change(self, data, stat, event):
+        if event:
+            node_name = event.path.rsplit('/', 1)[1]
+            if event.type == EventType.CREATED:
+                logger.debug('Assigned {}'.format(node_name))
+            elif event.type == EventType.DELETED:
+                # Check if droid was being assigned, by comparing creation
+                # times.
+                logger.error(
+                    'Uh-oh! An assigned droid ({}) was lost!'.format(
+                        node_name))
+                logger.error(
+                    'Accomodate user ({}) with a new droid'.format(data))
             else:
                 logger.debug('These are not the events you are looking for.')
 
     def assign_droid(self, user):
-        available_droids = self.zk.get_children('/droids/available')
-        if not available_droids:
-            logger.error('No droids available')
+        free_droids = self.zk.get_children('/droids/free')
+        if not free_droids:
+            logger.error('No free droids')
             return False
-        child = available_droids[0]
-        child_p = '/droids/available/{}'.format(child)
-        data, stat = self.zk.get(child_p)
-        data = json.loads(data)
+        child = free_droids[0]
+        child_p = '/droids/free/{}'.format(child)
+        _, stat = self.zk.get(child_p)
         transaction = self.zk.transaction()
         transaction.check(child_p, stat.version)
         transaction.delete(child_p)
-        data['user'] = user
         transaction.create(
             '/droids/assigned/{}'.format(child),
-            value=json.dumps(data),
+            value=user,
         )
         transaction.commit()
         return True
 
+    def get_droid_cparams(self, droid_name):
+        droid_p = '/droids/running/{}'.format(droid_name)
+        data, stat = self.zk.get(droid_p)
+        return json.loads(data)
+
+    def teardown(self):
+        logger.debug('Tearing down ZkMaster')
+        self.zk.stop()
+
 
 if __name__ == '__main__':
-    zk.start()
-    init_nodes()
+    m = MasterZkClient()
+    m.setup()
     from twisted.internet import reactor
 
-    reactor.addSystemEventTrigger('before', 'shutdown', lambda: zk.stop())
+    reactor.addSystemEventTrigger('before', 'shutdown', m.teardown)
     reactor.run()
