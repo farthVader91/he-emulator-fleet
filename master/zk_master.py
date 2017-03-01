@@ -60,12 +60,6 @@ class MasterZkClient(object):
             droid_p = '/droids/running/{}'.format(droid)
             DataWatch(self.zk, droid_p, self.on_running_droid_change)
 
-    def on_assigned_droid(self, children):
-        logger.debug('Registering watches on assigned droids')
-        for child in children:
-            child_p = '/droids/assigned/{}'.format(child)
-            DataWatch(self.zk, child_p, self.on_assigned_droid_change)
-
     def on_running_droid_change(self, data, stat, event):
         if event:
             node_name = event.path.rsplit('/', 1)[1]
@@ -82,22 +76,6 @@ class MasterZkClient(object):
                     self.zk.delete(assigned_p)
                 except NoNodeError:
                     logger.debug('{} was not assigned'.format(node_name))
-            else:
-                logger.debug('These are not the events you are looking for.')
-
-    def on_assigned_droid_change(self, data, stat, event):
-        if event:
-            node_name = event.path.rsplit('/', 1)[1]
-            if event.type == EventType.CREATED:
-                logger.debug('Assigned {}'.format(node_name))
-            elif event.type == EventType.DELETED:
-                # Check if droid was being assigned, by comparing creation
-                # times.
-                logger.error(
-                    'Uh-oh! An assigned droid ({}) was lost!'.format(
-                        node_name))
-                logger.error(
-                    'Accomodate user ({}) with a new droid'.format(data))
             else:
                 logger.debug('These are not the events you are looking for.')
 
@@ -118,6 +96,45 @@ class MasterZkClient(object):
         )
         transaction.commit()
         return True
+
+    def get_droid_cpar_for_user(self, user):
+        for child in self.zk.get_children('/droids/assigned'):
+            data, stat = self.zk.get('/droids/assigned/{}'.format(child))
+            if data == user:
+                data, _ = self.zk.get('/droids/running/{}'.format(child))
+                return json.loads(data)
+        raise Exception('No droid assigned for user')
+
+    def release_droid(self, droid):
+        data, stat = self.zk.get('/droids/running/{}'.format(droid))
+        t = self.zk.transaction()
+        t.check('/droids/running/{}'.format(droid), stat.version)
+        t.delete('/droids/assigned/{}'.format(droid))
+        t.create('/droids/free/{}'.format(droid))
+        t.commit()
+
+    def on_assigned_droid(self, children):
+        logger.debug('Registering watches on assigned droids')
+        for child in children:
+            child_p = '/droids/assigned/{}'.format(child)
+            DataWatch(self.zk, child_p, self.on_assigned_droid_change)
+            logger.debug('Assigned {}'.format(child))
+
+    def on_assigned_droid_change(self, data, stat, event):
+        if event:
+            node_name = event.path.rsplit('/', 1)[1]
+            if event.type == EventType.DELETED:
+                # Check if droid was lost or freed.
+                if self.zk.exists('/droids/running/{}'.format(node_name)):
+                    logger.debug('Droid ({}) was released'.format(node_name))
+                    return
+                logger.error(
+                    'Uh-oh! An assigned droid ({}) was lost!'.format(
+                        node_name))
+                logger.error(
+                    'Accomodate user ({}) with a new droid'.format(data))
+            else:
+                logger.debug('These are not the events you are looking for.')
 
     def get_droid_cparams(self, droid_name):
         droid_p = '/droids/running/{}'.format(droid_name)

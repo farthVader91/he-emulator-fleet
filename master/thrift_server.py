@@ -33,6 +33,7 @@ class DroidKeeperHandler(object):
         logger.debug(
             'Getting endpoint for user - {}'.format(user)
         )
+        self.zk_client.assign_droid
         cpars = ConnParams()
         cpars.host = 'localhost'
         cpars.port = '9090'
