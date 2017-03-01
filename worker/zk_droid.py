@@ -7,26 +7,26 @@ from kazoo.protocol.states import EventType
 from logger import logger
 from worker.emulator import Emulator
 from worker.utils import get_config, get_public_hostname
-
-
-def conn_listener(state):
-    if state == KazooState.CONNECTED:
-        logger.debug('connected...')
-    elif state == KazooState.LOST:
-        logger.debug('connection lost...')
-    elif state == KazooState.SUSPENDED:
-        logger.debug('connection suspended...')
+from settings import ZK_HOST, ZK_PORT
 
 
 class DroidZkClient(object):
-    def __init__(self, nodename):
-        self.nodename = nodename
+    def __init__(self):
+        self.nodename = None
 
-        config = get_config()
-        host='{}:{}'.format(config['zk_host'], config['zk_port'])
+        host='{}:{}'.format(ZK_HOST, ZK_PORT)
         zk = KazooClient(host)
-        zk.add_listener(conn_listener)
+        zk.add_listener(self.conn_listener)
         self.zk = zk
+
+    @staticmethod
+    def conn_listener(state):
+        if state == KazooState.CONNECTED:
+            logger.debug('connected...')
+        elif state == KazooState.LOST:
+            logger.debug('connection lost...')
+        elif state == KazooState.SUSPENDED:
+            logger.debug('connection suspended...')
 
     def setup(self):
         logger.debug('Registering onto zookeeper')
@@ -36,9 +36,11 @@ class DroidZkClient(object):
             'thrift_host': get_public_hostname(),
             'thrift_port': config['thrift_port'],
         }
-        self.zk.create('/droids/available/{}'.format(self.nodename),
-                        value=json.dumps(value),
-                        makepath=True, ephemeral=True)
+        path = self.zk.create(
+            '/droids/available/droid',
+            value=json.dumps(value), sequence=True,
+            makepath=True, ephemeral=True)
+        self.nodename = path.rsplit('/', 1)[1]
 
     def teardown(self):
         self.zk.stop()

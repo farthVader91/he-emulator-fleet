@@ -1,7 +1,7 @@
 import os
 
 from worker.emulator import Emulator
-from zk_client import DroidZkClient
+from zk_droid import DroidZkClient
 
 
 class DroidBuilder(object):
@@ -23,48 +23,51 @@ class DroidBuilder(object):
 
 class DroidCoordinator(object):
     def __init__(self):
-        self.instances = {}
+        self.droids_to_start = []
+        self.initialised = {}
 
-    def set_endpoint(self, id, endpoint):
-        self.instances[id] = {
-            'endpoint': endpoint,
-            'zk_client': DroidZkClient(id),
+    def add_droid(self, droid):
+        self.droids_to_start.append(droid)
+
+    def start_droid(self, droid):
+        droid.start()
+        zk_client = DroidZkClient()
+        zk_client.setup()
+        self.initialised[zk_client.nodename] = {
+            'droid': droid,
+            'zk_client': zk_client,
         }
 
-    def get_endpoint(self, id):
-        return self.instances[id]['endpoint']
-
-    def get_zk_client(self, id):
-        return self.instances[id]['zk_client']
+    def setup(self):
+        while True:
+            try:
+                droid = self.droids_to_start.pop()
+                self.start_droid(droid)
+            except IndexError:
+                break
 
     def count(self):
-        return len(self.instances)
+        return len(self.initialised)
 
-    def start_endpoint(self, id):
-        endpoint = self.get_endpoint(id)
-        # Start droid
-        endpoint.start()
-        # Setup Zk client
-        zk_client = self.get_zk_client(id)
-        zk_client.setup()
+    def get_droid(self, id):
+        return self.initialised[id]['droid']
 
-    def iter_endpoints(self):
-        return self.instances.iteritems()
+    def get_zk_client(self, id):
+        return self.initialised[id]['zk_client']
 
-    def setup(self):
-        for instance_id, _ in self.iter_endpoints():
-            self.start_endpoint(instance_id)
-
-    def stop_endpoint(self, id):
-        endpoint = self.get_endpoint(id)
-        # Stop droid
-        endpoint.stop()
-        # Setup Zk client
+    def stop_droid(self, id):
+        # Stop Zk client
         zk_client = self.get_zk_client(id)
         zk_client.teardown()
+        # Stop droid
+        droid = self.get_droid(id)
+        droid.stop()
+
+    def iter_droid_ids(self):
+        return self.initialised.iterkeys()
 
     def teardown(self):
-        for instance_id, _ in self.iter_endpoints():
-            self.stop_endpoint(instance_id)
+        for instance_id, _ in self.iter_droid_ids():
+            self.stop_droid(instance_id)
 
     

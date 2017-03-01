@@ -3,6 +3,7 @@ import atexit
 from logger import logger
 from worker.helpers import DroidCoordinator, DroidBuilder
 from worker.utils import get_config, get_public_hostname
+from worker.utils import get_package_name_from_url
 
 from tgen.droid_service.ttypes import ConnParams
 from tgen.droid_service import DroidService
@@ -26,7 +27,7 @@ class DroidServiceHandler(object):
                 builder.set_port(droid['port'])
             if droid['avd']:
                 builder.set_avd(droid['avd'])
-            self.coordinator.set_endpoint(droid['name'], builder.build())
+            self.coordinator.add_droid(builder.build())
         # Start all endpoints now
         self.coordinator.setup()
 
@@ -35,11 +36,11 @@ class DroidServiceHandler(object):
 
     def get_package_name(self, apk_url):
         logger.debug("getting package name for apk {}".format(apk_url))
-        return "some random package"
+        return get_package_name_from_url(apk_url)
 
     def get_endpoint(self, endpoint_id):
         logger.debug("Getting endpoint for {}".format(endpoint_id))
-        endpoint = self.coordinator.get_endpoint(endpoint_id)
+        endpoint = self.coordinator.get_droid(endpoint_id)
         cp = ConnParams()
         cp.host = get_public_hostname()
         cp.port = endpoint.port
