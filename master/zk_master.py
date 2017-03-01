@@ -18,13 +18,27 @@ class MasterZkClient(object):
         zk.add_listener(self.conn_listener)
         self.zk = zk
 
+    def cleanup_dangling_droids(self):
+        free_droids = self.zk.get_children('/droids/free')
+        running_droids = self.zk.get_children('/droids/running')
+        dangling_droids = (set(free_droids) - set(running_droids))
+        for droid in dangling_droids:
+            logger.debug('Deleting dangling free droid ({})'.format(droid))
+            self.zk.delete('/droids/free/{}'.format(droid))
+        assigned_droids = self.zk.get_children('/droids/assigned')
+        dangling_droids = set(assigned_droids) - set(running_droids)
+        for droid in dangling_droids:
+            logger.debug('Deleting dangling assigned droid ({})'.format(droid))
+            self.zk.delete('/droids/assigned/{}'.format(droid))
+
     def setup(self):
         logger.debug('Setting up directories and nodes')
         self.zk.start()
         self.zk.ensure_path('/droids/running')
         self.zk.ensure_path('/droids/free')
         self.zk.ensure_path('/droids/assigned')
-
+        # Cleanup
+        self.cleanup_dangling_droids()
         # Register watches
         self.on_running_droid = ChildrenWatch(
             self.zk,
@@ -52,15 +66,16 @@ class MasterZkClient(object):
             return
         logger.debug('Registering watches on running droids')
         assigned_droids = self.zk.get_children('/droids/assigned')
-        free_doids = set(children) - set(assigned_droids)
-        for droid in free_doids:
+        free_droids = set(children) - set(assigned_droids)
+        for droid in free_droids:
             # Implies a new droid became available
             logger.debug('WooHoo! Another droid joins our ranks!')
             # Create corresponding node in /droids/free
             free_p = '/droids/free/{}'.format(droid)
             self.zk.ensure_path(free_p)
             droid_p = '/droids/running/{}'.format(droid)
-            DataWatch(self.zk, droid_p, self.on_running_droid_change)
+            self.on_running_droid_change = DataWatch(
+                self.zk, droid_p, self.on_running_droid_change)
 
     def on_running_droid_change(self, data, stat, event):
         if event:
@@ -115,11 +130,17 @@ class MasterZkClient(object):
         except IndexError:
             return None
 
-    def get_droid_for_user(self, user):
+    def get_droid_name_for_user(self, user):
         for child in self.zk.get_children('/droids/assigned'):
             data, _ = self.zk.get('/droids/assigned/{}'.format(child))
             if data == user:
-                return self.get_droid(child)
+                return child
+        return None
+
+    def get_droid_for_user(self, user):
+        droid_name = self.get_droid_name_for_user(user)
+        if droid_name:
+            return self.get_droid(droid_name)
         return None
 
     def release_droid(self, droid):
@@ -133,8 +154,10 @@ class MasterZkClient(object):
     def on_assigned_droid(self, children):
         logger.debug('Registering watches on assigned droids')
         for child in children:
+
             child_p = '/droids/assigned/{}'.format(child)
-            DataWatch(self.zk, child_p, self.on_assigned_droid_change)
+            self.on_assigned_droid_change = DataWatch(
+                self.zk, child_p, self.on_assigned_droid_change)
             logger.debug('Assigned {}'.format(child))
 
     def on_assigned_droid_change(self, data, stat, event):

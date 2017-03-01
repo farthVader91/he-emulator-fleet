@@ -1,5 +1,7 @@
 from contextlib import contextmanager
 
+from logger import logger
+
 from master.tgen.droid_keeper import DroidKeeper
 
 from thrift.transport import TSocket
@@ -19,10 +21,14 @@ class DroidKeeperClient(object):
         transport = TTransport.TBufferedTransport(transport)
         protocol = TBinaryProtocol.TBinaryProtocol(transport)
         self.client = DroidKeeper.Client(protocol)
+        logger.debug('opening connection')
         transport.open()
-        yield
-        transport.close()
-        self.client = None
+        try:
+            yield
+        finally:
+            logger.debug('closing connection')
+            transport.close()
+            self.client = None
 
     def ping(self):
         with self.transport():

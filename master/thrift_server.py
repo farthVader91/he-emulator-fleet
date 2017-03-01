@@ -43,11 +43,16 @@ class DroidKeeperHandler(object):
         logger.debug(
             'Getting endpoint for user - {}'.format(user)
         )
-        droid = self.zk_client.get_droid_for_user(user)
-        if droid is None:
-            self.zk_client.assign_droid(user)
-        droid = self.zk_client.get_droid_for_user(user)
-        endpoint_cpars = droid.get_endpoint()
+        droid_name = self.zk_client.get_droid_name_for_user(user)
+        if droid_name is None:
+            if not self.zk_client.assign_droid(user):
+                logger.debug('Raising exception')
+                ae = ApplicationException()
+                ae.msg = 'No droids available'
+                raise ae
+        droid_name = self.zk_client.get_droid_name_for_user(user)
+        droid = self.zk_client.get_droid(droid_name)
+        endpoint_cpars = droid.get_endpoint(droid_name)
         cpars = ConnParams()
         cpars.host = endpoint_cpars.host
         cpars.port = endpoint_cpars.port
