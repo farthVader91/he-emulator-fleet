@@ -88,8 +88,7 @@ class MasterZkClient(object):
             free_p = '/droids/free/{}'.format(droid)
             self.zk.ensure_path(free_p)
             droid_p = '/droids/running/{}'.format(droid)
-            self.on_running_droid_change = DataWatch(
-                self.zk, droid_p, self.on_running_droid_change)
+            DataWatch(self.zk, droid_p, self.on_running_droid_change)
 
     def on_running_droid_change(self, data, stat, event):
         if event:
@@ -168,10 +167,8 @@ class MasterZkClient(object):
     def on_assigned_droid(self, children):
         logger.debug('Registering watches on assigned droids')
         for child in children:
-
             child_p = '/droids/assigned/{}'.format(child)
-            self.on_assigned_droid_change = DataWatch(
-                self.zk, child_p, self.on_assigned_droid_change)
+            DataWatch(self.zk, child_p, self.on_assigned_droid_change)
             logger.debug('Assigned {}'.format(child))
 
     def on_assigned_droid_change(self, data, stat, event):

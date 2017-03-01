@@ -15,7 +15,6 @@ service DroidService {
 
    ConnParams get_endpoint(1: string endpoint_id),
 
-   bool install_apk(1: string endpoint_id, 2: string apk_url),
-
-   bool start_package(1: string endpoint_id, 2: string package_name),
+   bool run_operation(1: string endpoint_id, 2: string operation, 3: string apk_url) throws (
+          1: ApplicationException ae),
 }

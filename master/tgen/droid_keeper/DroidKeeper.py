@@ -36,6 +36,20 @@ class Iface:
     """
     pass
 
+  def interact_with_endpoint(self, dr):
+    """
+    Parameters:
+     - dr
+    """
+    pass
+
+  def release_endpoint_for_user(self, user):
+    """
+    Parameters:
+     - user
+    """
+    pass
+
 
 class Client(Iface):
   def __init__(self, iprot, oprot=None):
@@ -134,6 +148,53 @@ class Client(Iface):
       raise result.ae
     raise TApplicationException(TApplicationException.MISSING_RESULT, "get_endpoint_for_user failed: unknown result")
 
+  def interact_with_endpoint(self, dr):
+    """
+    Parameters:
+     - dr
+    """
+    self.send_interact_with_endpoint(dr)
+    return self.recv_interact_with_endpoint()
+
+  def send_interact_with_endpoint(self, dr):
+    self._oprot.writeMessageBegin('interact_with_endpoint', TMessageType.CALL, self._seqid)
+    args = interact_with_endpoint_args()
+    args.dr = dr
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_interact_with_endpoint(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = interact_with_endpoint_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    if result.ae is not None:
+      raise result.ae
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "interact_with_endpoint failed: unknown result")
+
+  def release_endpoint_for_user(self, user):
+    """
+    Parameters:
+     - user
+    """
+    self.send_release_endpoint_for_user(user)
+
+  def send_release_endpoint_for_user(self, user):
+    self._oprot.writeMessageBegin('release_endpoint_for_user', TMessageType.ONEWAY, self._seqid)
+    args = release_endpoint_for_user_args()
+    args.user = user
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
 
 class Processor(Iface, TProcessor):
   def __init__(self, handler):
@@ -142,6 +203,8 @@ class Processor(Iface, TProcessor):
     self._processMap["ping"] = Processor.process_ping
     self._processMap["get_package_name"] = Processor.process_get_package_name
     self._processMap["get_endpoint_for_user"] = Processor.process_get_endpoint_for_user
+    self._processMap["interact_with_endpoint"] = Processor.process_interact_with_endpoint
+    self._processMap["release_endpoint_for_user"] = Processor.process_release_endpoint_for_user
 
   def process(self, iprot, oprot):
     (name, type, seqid) = iprot.readMessageBegin()
@@ -220,6 +283,40 @@ class Processor(Iface, TProcessor):
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
+
+  def process_interact_with_endpoint(self, seqid, iprot, oprot):
+    args = interact_with_endpoint_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = interact_with_endpoint_result()
+    try:
+      result.success = self._handler.interact_with_endpoint(args.dr)
+      msg_type = TMessageType.REPLY
+    except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
+      raise
+    except ApplicationException as ae:
+      msg_type = TMessageType.REPLY
+      result.ae = ae
+    except Exception as ex:
+      msg_type = TMessageType.EXCEPTION
+      logging.exception(ex)
+      result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+    oprot.writeMessageBegin("interact_with_endpoint", msg_type, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_release_endpoint_for_user(self, seqid, iprot, oprot):
+    args = release_endpoint_for_user_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    try:
+      self._handler.release_endpoint_for_user(args.user)
+      msg_type = TMessageType.REPLY
+    except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
+      raise
+    except:
+      pass
 
 
 # HELPER FUNCTIONS AND STRUCTURES
@@ -590,6 +687,215 @@ class get_endpoint_for_user_result:
     value = 17
     value = (value * 31) ^ hash(self.success)
     value = (value * 31) ^ hash(self.ae)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class interact_with_endpoint_args:
+  """
+  Attributes:
+   - dr
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'dr', (DroidRequest, DroidRequest.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, dr=None,):
+    self.dr = dr
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.dr = DroidRequest()
+          self.dr.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('interact_with_endpoint_args')
+    if self.dr is not None:
+      oprot.writeFieldBegin('dr', TType.STRUCT, 1)
+      self.dr.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.dr)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class interact_with_endpoint_result:
+  """
+  Attributes:
+   - success
+   - ae
+  """
+
+  thrift_spec = (
+    (0, TType.BOOL, 'success', None, None, ), # 0
+    (1, TType.STRUCT, 'ae', (ApplicationException, ApplicationException.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, success=None, ae=None,):
+    self.success = success
+    self.ae = ae
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.BOOL:
+          self.success = iprot.readBool()
+        else:
+          iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.ae = ApplicationException()
+          self.ae.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('interact_with_endpoint_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.BOOL, 0)
+      oprot.writeBool(self.success)
+      oprot.writeFieldEnd()
+    if self.ae is not None:
+      oprot.writeFieldBegin('ae', TType.STRUCT, 1)
+      self.ae.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.success)
+    value = (value * 31) ^ hash(self.ae)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class release_endpoint_for_user_args:
+  """
+  Attributes:
+   - user
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'user', None, None, ), # 1
+  )
+
+  def __init__(self, user=None,):
+    self.user = user
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.user = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('release_endpoint_for_user_args')
+    if self.user is not None:
+      oprot.writeFieldBegin('user', TType.STRING, 1)
+      oprot.writeString(self.user)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.user)
     return value
 
   def __repr__(self):

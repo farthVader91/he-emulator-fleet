@@ -43,6 +43,8 @@ class DroidServiceHandler(object):
         except Exception as err:
             exc = ApplicationException()
             exc.msg = str(err)
+            if hasattr(err, 'msg'):
+                exc.msg = err.msg
             raise exc
 
     def get_endpoint(self, endpoint_id):
@@ -53,14 +55,23 @@ class DroidServiceHandler(object):
         cp.port = endpoint.port
         return cp
 
-    def install_apk(self, endpoint_id, apk_url):
-        logger.debug("installing apk in {}".format(endpoint_id))
-        return True
-
-    def start_package(self, endpoint_id, package_name):
-        logger.debug(
-            "Starting package {} for {}".format(package_name, endpoint_id))
-        return True
+    def run_operation(self, endpoint_id, operation, apk_url):
+        logger.debug("Interacting with Droid({})".format(endpoint_id))
+        try:
+            endpoint = self.coordinator.get_droid(endpoint_id)
+            if operation == 'install_apk':
+                return endpoint.install_apk_from_url(apk_url)
+            elif operation == 'install_and_start_apk':
+                endpoint.install_apk_from_url(apk_url)
+                return endpoint.start_last_package()
+            else:
+                raise Exception('Unsupported operation - {}'.format(operation))
+        except Exception as err:
+            exc = ApplicationException()
+            exc.msg = str(err)
+            if hasattr(err, 'msg'):
+                exc.msg = err.msg
+            raise exc
 
     def pre_server_start_log(self):
         logger.debug("{} droid(s) at your service".format(

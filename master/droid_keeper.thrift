@@ -1,3 +1,9 @@
+struct DroidRequest {
+  1: string user,
+  2: optional string apk_url,
+  3: optional string op,
+}
+
 struct ConnParams {
   1: string host,
   2: string port,
@@ -15,4 +21,9 @@ service DroidKeeper {
 
    ConnParams get_endpoint_for_user(1: string user) throws (
           1: ApplicationException ae),
+
+   bool interact_with_endpoint(1: DroidRequest dr) throws (
+          1: ApplicationException ae),
+
+   oneway void release_endpoint_for_user(1: string user),
 }

@@ -1,5 +1,7 @@
 from contextlib import contextmanager
 
+from logger import logger
+
 from tgen.droid_service import DroidService
 
 from thrift.transport import TSocket
@@ -21,10 +23,14 @@ class DroidClient(object):
         transport = TTransport.TBufferedTransport(transport)
         protocol = TBinaryProtocol.TBinaryProtocol(transport)
         self.client = DroidService.Client(protocol)
+        logger.debug('opening connection')
         transport.open()
-        yield
-        transport.close()
-        self.client = None
+        try:
+            yield
+        finally:
+            logger.debug('closing connection')
+            transport.close()
+            self.client = None
 
     def ping(self):
         with self.transport():
@@ -38,10 +44,7 @@ class DroidClient(object):
         with self.transport():
             return self.client.get_endpoint(endpoint_id)
 
-    def install_apk(self, endpoint_id, apk_url):
+    def run_operation(self, endpoint_id, operation, apk_url):
         with self.transport():
-            return self.client.install_apk(endpoint_id, apk_url)
-
-    def start_package(self, endpoint_id, package_name):
-        with self.transport():
-            return self.client.start_package(endpoint_id, package_name)
+            return self.client.run_operation(
+                    endpoint_id, operation, apk_url)

@@ -17,6 +17,97 @@ except:
 
 
 
+class DroidRequest:
+  """
+  Attributes:
+   - user
+   - apk_url
+   - op
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'user', None, None, ), # 1
+    (2, TType.STRING, 'apk_url', None, None, ), # 2
+    (3, TType.STRING, 'op', None, None, ), # 3
+  )
+
+  def __init__(self, user=None, apk_url=None, op=None,):
+    self.user = user
+    self.apk_url = apk_url
+    self.op = op
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.user = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRING:
+          self.apk_url = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRING:
+          self.op = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('DroidRequest')
+    if self.user is not None:
+      oprot.writeFieldBegin('user', TType.STRING, 1)
+      oprot.writeString(self.user)
+      oprot.writeFieldEnd()
+    if self.apk_url is not None:
+      oprot.writeFieldBegin('apk_url', TType.STRING, 2)
+      oprot.writeString(self.apk_url)
+      oprot.writeFieldEnd()
+    if self.op is not None:
+      oprot.writeFieldBegin('op', TType.STRING, 3)
+      oprot.writeString(self.op)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.user)
+    value = (value * 31) ^ hash(self.apk_url)
+    value = (value * 31) ^ hash(self.op)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
 class ConnParams:
   """
   Attributes:

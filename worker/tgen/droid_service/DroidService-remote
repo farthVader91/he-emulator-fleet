@@ -27,8 +27,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print('  void ping()')
   print('  string get_package_name(string apk_url)')
   print('  ConnParams get_endpoint(string endpoint_id)')
-  print('  bool install_apk(string endpoint_id, string apk_url)')
-  print('  bool start_package(string endpoint_id, string package_name)')
+  print('  bool run_operation(string endpoint_id, string operation, string apk_url)')
   print('')
   sys.exit(0)
 
@@ -103,17 +102,11 @@ elif cmd == 'get_endpoint':
     sys.exit(1)
   pp.pprint(client.get_endpoint(args[0],))
 
-elif cmd == 'install_apk':
-  if len(args) != 2:
-    print('install_apk requires 2 args')
+elif cmd == 'run_operation':
+  if len(args) != 3:
+    print('run_operation requires 3 args')
     sys.exit(1)
-  pp.pprint(client.install_apk(args[0],args[1],))
-
-elif cmd == 'start_package':
-  if len(args) != 2:
-    print('start_package requires 2 args')
-    sys.exit(1)
-  pp.pprint(client.start_package(args[0],args[1],))
+  pp.pprint(client.run_operation(args[0],args[1],args[2],))
 
 else:
   print('Unrecognized method %s' % cmd)

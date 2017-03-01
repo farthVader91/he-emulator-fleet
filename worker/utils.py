@@ -6,8 +6,8 @@ from copy import deepcopy
 from tempfile import NamedTemporaryFile
 
 import requests
-from mirakuru import SimpleExecutor
 from requests.exceptions import ConnectTimeout
+import subprocess32 as subprocess
 
 from common_settings import ROOT_DIR
 from logger import logger
@@ -35,23 +35,43 @@ def download_to_temp(url):
 
 def get_package_name_from_url(apk_url):
     download_to = download_to_temp(apk_url)
-    return get_package_name(download_to)
+    pkg = get_package_name(download_to)
+    # Remove temp file
+    os.remove(download_to)
+    return pkg
 
 
-def get_package_name(path):
+def parse_manifest(path):
+    package, activity = None, None
     cmd = ["aapt", "dump", "badging", path]
-    proc = SimpleExecutor(cmd)
-    proc.start()
-    p = re.compile(r"^package: name='([\w\.]+)'")
-    for line in proc.output():
-        m = p.match(line)
-        if m:
-            pkg = m.group(1)
-            logger.debug('Extracted package name {}'.format(pkg))
-            return pkg
+    output = subprocess.check_output(
+        cmd, timeout=5, universal_newlines=True)
+    p1 = re.compile(r"^package: name='([\w\.]+)'")
+    p2 = re.compile(r"^launchable-activity: name='([\w\.]+)'")
+    for line in output.splitlines():
+        if package and activity:
+            return {
+                'package': package,
+                'activity': activity,
+            }
+        if package is None:
+            m = p1.match(line)
+            if m:
+                package = m.group(1)
+                logger.debug('Extracted package name {}'.format(package))
+        if activity is None:
+            m = p2.match(line)
+            if m:
+                activity = m.group(1)
+                logger.debug('Extracted activity  {}'.format(activity))
+
     error = 'Unable to extract package name for file {}'.format(
         os.path.basename(path))
     raise Exception(error)
+
+
+def get_package_name(path):
+    return parse_manifest(path)['package']
 
 
 def is_open_port(port):
@@ -68,9 +88,9 @@ class CachedGlobals:
 
 def get_public_hostname():
     if CachedGlobals.HOSTNAME is None:
+        url = "http://169.254.169.254/latest/meta-data/public-host"
         try:
-            resp = requests.get("http://169.254.169.254/latest/meta-data/public-host",
-                                timeout=(3, 2))
+            resp = requests.get(url, timeout=(3, 2))
             if resp.status == 200:
                 CachedGlobals.HOSTNAME = resp.text
         except ConnectTimeout:
@@ -82,7 +102,8 @@ def get_public_hostname():
 def get_config():
     if CachedGlobals.CONFIG is None:
         config_path = os.path.join(ROOT_DIR, 'worker',  'config.json')
-        assert os.path.exists(config_path), "Config file not provided for worker"
+        err = "Config file not provided for worker"
+        assert os.path.exists(config_path), err
         with open(config_path) as source:
             CachedGlobals.CONFIG = json.load(source)
 

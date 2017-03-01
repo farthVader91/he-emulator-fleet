@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from logger import logger
 
 from master.tgen.droid_keeper import DroidKeeper
+from master.tgen.droid_keeper.ttypes import DroidRequest
 
 from thrift.transport import TSocket
 from thrift.transport import TTransport
@@ -41,3 +42,16 @@ class DroidKeeperClient(object):
     def get_endpoint_for_user(self, user):
         with self.transport():
             return self.client.get_endpoint_for_user(user)
+
+    def interact_with_endpoint(self, user, op, apk_url=None):
+        dr = DroidRequest()
+        dr.user = user
+        dr.op = op
+        if apk_url:
+            dr.apk_url = apk_url
+        with self.transport():
+            return self.client.interact_with_endpoint(dr)
+
+    def release_endpoint_for_user(self, user):
+        with self.transport():
+            return self.client.release_endpoint_for_user(user)
