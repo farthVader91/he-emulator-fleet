@@ -18,6 +18,16 @@ class MasterZkClient(object):
         zk.add_listener(self.conn_listener)
         self.zk = zk
 
+    def setup_free_droids(self):
+        running_droids = self.zk.get_children('/droids/running')
+        for droid in running_droids:
+            logger.debug('Setting up running droids')
+            self.zk.create('/droids/free/{}'.format(droid))
+            DataWatch(
+                self.zk,
+                '/droids/running/{}'.format(droid),
+                self.on_running_droid_change)
+
     def cleanup_dangling_droids(self):
         free_droids = self.zk.get_children('/droids/free')
         running_droids = self.zk.get_children('/droids/running')
@@ -31,14 +41,18 @@ class MasterZkClient(object):
             logger.debug('Deleting dangling assigned droid ({})'.format(droid))
             self.zk.delete('/droids/assigned/{}'.format(droid))
 
-    def setup(self):
-        logger.debug('Setting up directories and nodes')
-        self.zk.start()
+    def initialize_nodes(self):
         self.zk.ensure_path('/droids/running')
         self.zk.ensure_path('/droids/free')
         self.zk.ensure_path('/droids/assigned')
-        # Cleanup
         self.cleanup_dangling_droids()
+        self.setup_free_droids()
+
+    def setup(self):
+        logger.debug('Setting up directories and nodes')
+        self.zk.start()
+        # Initialize nodes
+        self.initialize_nodes()
         # Register watches
         self.on_running_droid = ChildrenWatch(
             self.zk,
