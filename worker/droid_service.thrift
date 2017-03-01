@@ -3,10 +3,15 @@ struct ConnParams {
   2: string port,
 }
 
+exception ApplicationException {
+  1: string msg
+}
+
 service DroidService {
    void ping(),
 
-   string get_package_name(1: string apk_url),
+   string get_package_name(1: string apk_url) throws (
+          1: ApplicationException ae),
 
    ConnParams get_endpoint(1: string endpoint_id),
 

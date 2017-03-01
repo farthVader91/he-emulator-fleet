@@ -26,7 +26,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print('Functions:')
   print('  void ping()')
   print('  string get_package_name(string apk_url)')
-  print('  ConnParams get_endpoint(string user)')
+  print('  ConnParams get_endpoint_for_user(string user)')
   print('')
   sys.exit(0)
 
@@ -95,11 +95,11 @@ elif cmd == 'get_package_name':
     sys.exit(1)
   pp.pprint(client.get_package_name(args[0],))
 
-elif cmd == 'get_endpoint':
+elif cmd == 'get_endpoint_for_user':
   if len(args) != 1:
-    print('get_endpoint requires 1 args')
+    print('get_endpoint_for_user requires 1 args')
     sys.exit(1)
-  pp.pprint(client.get_endpoint(args[0],))
+  pp.pprint(client.get_endpoint_for_user(args[0],))
 
 else:
   print('Unrecognized method %s' % cmd)

@@ -1,11 +1,13 @@
 import atexit
 
+import requests
+
 from logger import logger
 from worker.helpers import DroidCoordinator, DroidBuilder
 from worker.utils import get_config, get_public_hostname
 from worker.utils import get_package_name_from_url
 
-from worker.tgen.droid_service.ttypes import ConnParams
+from worker.tgen.droid_service.ttypes import ConnParams, ApplicationException
 from worker.tgen.droid_service import DroidService
 
 from thrift.transport import TSocket
@@ -36,7 +38,12 @@ class DroidServiceHandler(object):
 
     def get_package_name(self, apk_url):
         logger.debug("getting package name for apk {}".format(apk_url))
-        return get_package_name_from_url(apk_url)
+        try:
+            return get_package_name_from_url(apk_url)
+        except Exception as err:
+            exc = ApplicationException()
+            exc.msg = str(err)
+            raise exc
 
     def get_endpoint(self, endpoint_id):
         logger.debug("Getting endpoint for {}".format(endpoint_id))

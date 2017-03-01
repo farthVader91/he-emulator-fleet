@@ -1,4 +1,5 @@
 import json
+import random
 
 from kazoo.client import KazooClient, KazooState
 from kazoo.exceptions import NoNodeError
@@ -7,6 +8,7 @@ from kazoo.recipe.watchers import ChildrenWatch, DataWatch
 
 from logger import logger
 from common_settings import ZK_HOST, ZK_PORT
+from worker.thrift_client import DroidClient
 
 
 class MasterZkClient(object):
@@ -97,13 +99,28 @@ class MasterZkClient(object):
         transaction.commit()
         return True
 
-    def get_droid_cpar_for_user(self, user):
+    def get_droid(self, droid):
+        data, _ = self.zk.get('/droids/running/{}'.format(droid))
+        cpar = json.loads(data)
+        return DroidClient(cpar['thrift_host'], int(cpar['thrift_port']))
+
+    def get_arbitrary_droid_name(self):
+        children = self.zk.get_children('/droids/running')
+        return random.choice(children)
+
+    def get_arbitrary_droid(self):
+        try:
+            droid_name = self.get_arbitrary_droid_name()
+            return self.get_droid(droid_name)
+        except IndexError:
+            return None
+
+    def get_droid_for_user(self, user):
         for child in self.zk.get_children('/droids/assigned'):
-            data, stat = self.zk.get('/droids/assigned/{}'.format(child))
+            data, _ = self.zk.get('/droids/assigned/{}'.format(child))
             if data == user:
-                data, _ = self.zk.get('/droids/running/{}'.format(child))
-                return json.loads(data)
-        raise Exception('No droid assigned for user')
+                return self.get_droid(child)
+        return None
 
     def release_droid(self, droid):
         data, stat = self.zk.get('/droids/running/{}'.format(droid))
@@ -135,11 +152,6 @@ class MasterZkClient(object):
                     'Accomodate user ({}) with a new droid'.format(data))
             else:
                 logger.debug('These are not the events you are looking for.')
-
-    def get_droid_cparams(self, droid_name):
-        droid_p = '/droids/running/{}'.format(droid_name)
-        data, stat = self.zk.get(droid_p)
-        return json.loads(data)
 
     def teardown(self):
         logger.debug('Tearing down ZkMaster')

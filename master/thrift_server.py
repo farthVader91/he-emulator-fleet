@@ -4,7 +4,7 @@ from logger import logger
 from master.settings import THRIFT_HOST, THRIFT_PORT
 from master.zk_master import MasterZkClient
 
-from master.tgen.droid_keeper.ttypes import ConnParams
+from master.tgen.droid_keeper.ttypes import ConnParams, ApplicationException
 from master.tgen.droid_keeper import DroidKeeper
 
 from thrift.transport import TSocket
@@ -27,16 +27,30 @@ class DroidKeeperHandler(object):
     def get_package_name(self, apk_url):
         logger.debug(
             'Getting package name for {}'.format(apk_url))
-        return "com.blah.meh"
+        droid = self.zk_client.get_arbitrary_droid()
+        if droid is None:
+            exc = ApplicationException()
+            exc.msg = 'No droids available'
+            raise exc
+        try:
+            return droid.get_package_name(apk_url)
+        except Exception as err:
+            exc = ApplicationException()
+            exc.msg = err.msg
+            raise exc
 
-    def get_endpoint(self, user):
+    def get_endpoint_for_user(self, user):
         logger.debug(
             'Getting endpoint for user - {}'.format(user)
         )
-        self.zk_client.assign_droid
+        droid = self.zk_client.get_droid_for_user(user)
+        if droid is None:
+            self.zk_client.assign_droid(user)
+        droid = self.zk_client.get_droid_for_user(user)
+        endpoint_cpars = droid.get_endpoint()
         cpars = ConnParams()
-        cpars.host = 'localhost'
-        cpars.port = '9090'
+        cpars.host = endpoint_cpars.host
+        cpars.port = endpoint_cpars.port
         return cpars
 
     def teardown(self):

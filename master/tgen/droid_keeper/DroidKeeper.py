@@ -29,7 +29,7 @@ class Iface:
     """
     pass
 
-  def get_endpoint(self, user):
+  def get_endpoint_for_user(self, user):
     """
     Parameters:
      - user
@@ -97,25 +97,27 @@ class Client(Iface):
     iprot.readMessageEnd()
     if result.success is not None:
       return result.success
+    if result.ae is not None:
+      raise result.ae
     raise TApplicationException(TApplicationException.MISSING_RESULT, "get_package_name failed: unknown result")
 
-  def get_endpoint(self, user):
+  def get_endpoint_for_user(self, user):
     """
     Parameters:
      - user
     """
-    self.send_get_endpoint(user)
-    return self.recv_get_endpoint()
+    self.send_get_endpoint_for_user(user)
+    return self.recv_get_endpoint_for_user()
 
-  def send_get_endpoint(self, user):
-    self._oprot.writeMessageBegin('get_endpoint', TMessageType.CALL, self._seqid)
-    args = get_endpoint_args()
+  def send_get_endpoint_for_user(self, user):
+    self._oprot.writeMessageBegin('get_endpoint_for_user', TMessageType.CALL, self._seqid)
+    args = get_endpoint_for_user_args()
     args.user = user
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
 
-  def recv_get_endpoint(self):
+  def recv_get_endpoint_for_user(self):
     iprot = self._iprot
     (fname, mtype, rseqid) = iprot.readMessageBegin()
     if mtype == TMessageType.EXCEPTION:
@@ -123,12 +125,12 @@ class Client(Iface):
       x.read(iprot)
       iprot.readMessageEnd()
       raise x
-    result = get_endpoint_result()
+    result = get_endpoint_for_user_result()
     result.read(iprot)
     iprot.readMessageEnd()
     if result.success is not None:
       return result.success
-    raise TApplicationException(TApplicationException.MISSING_RESULT, "get_endpoint failed: unknown result")
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "get_endpoint_for_user failed: unknown result")
 
 
 class Processor(Iface, TProcessor):
@@ -137,7 +139,7 @@ class Processor(Iface, TProcessor):
     self._processMap = {}
     self._processMap["ping"] = Processor.process_ping
     self._processMap["get_package_name"] = Processor.process_get_package_name
-    self._processMap["get_endpoint"] = Processor.process_get_endpoint
+    self._processMap["get_endpoint_for_user"] = Processor.process_get_endpoint_for_user
 
   def process(self, iprot, oprot):
     (name, type, seqid) = iprot.readMessageBegin()
@@ -183,6 +185,9 @@ class Processor(Iface, TProcessor):
       msg_type = TMessageType.REPLY
     except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
       raise
+    except ApplicationException as ae:
+      msg_type = TMessageType.REPLY
+      result.ae = ae
     except Exception as ex:
       msg_type = TMessageType.EXCEPTION
       logging.exception(ex)
@@ -192,13 +197,13 @@ class Processor(Iface, TProcessor):
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_get_endpoint(self, seqid, iprot, oprot):
-    args = get_endpoint_args()
+  def process_get_endpoint_for_user(self, seqid, iprot, oprot):
+    args = get_endpoint_for_user_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = get_endpoint_result()
+    result = get_endpoint_for_user_result()
     try:
-      result.success = self._handler.get_endpoint(args.user)
+      result.success = self._handler.get_endpoint_for_user(args.user)
       msg_type = TMessageType.REPLY
     except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
       raise
@@ -206,7 +211,7 @@ class Processor(Iface, TProcessor):
       msg_type = TMessageType.EXCEPTION
       logging.exception(ex)
       result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
-    oprot.writeMessageBegin("get_endpoint", msg_type, seqid)
+    oprot.writeMessageBegin("get_endpoint_for_user", msg_type, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -375,14 +380,17 @@ class get_package_name_result:
   """
   Attributes:
    - success
+   - ae
   """
 
   thrift_spec = (
     (0, TType.STRING, 'success', None, None, ), # 0
+    (1, TType.STRUCT, 'ae', (ApplicationException, ApplicationException.thrift_spec), None, ), # 1
   )
 
-  def __init__(self, success=None,):
+  def __init__(self, success=None, ae=None,):
     self.success = success
+    self.ae = ae
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -396,6 +404,12 @@ class get_package_name_result:
       if fid == 0:
         if ftype == TType.STRING:
           self.success = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.ae = ApplicationException()
+          self.ae.read(iprot)
         else:
           iprot.skip(ftype)
       else:
@@ -412,6 +426,10 @@ class get_package_name_result:
       oprot.writeFieldBegin('success', TType.STRING, 0)
       oprot.writeString(self.success)
       oprot.writeFieldEnd()
+    if self.ae is not None:
+      oprot.writeFieldBegin('ae', TType.STRUCT, 1)
+      self.ae.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -422,6 +440,7 @@ class get_package_name_result:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.success)
+    value = (value * 31) ^ hash(self.ae)
     return value
 
   def __repr__(self):
@@ -435,7 +454,7 @@ class get_package_name_result:
   def __ne__(self, other):
     return not (self == other)
 
-class get_endpoint_args:
+class get_endpoint_for_user_args:
   """
   Attributes:
    - user
@@ -472,7 +491,7 @@ class get_endpoint_args:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('get_endpoint_args')
+    oprot.writeStructBegin('get_endpoint_for_user_args')
     if self.user is not None:
       oprot.writeFieldBegin('user', TType.STRING, 1)
       oprot.writeString(self.user)
@@ -500,7 +519,7 @@ class get_endpoint_args:
   def __ne__(self, other):
     return not (self == other)
 
-class get_endpoint_result:
+class get_endpoint_for_user_result:
   """
   Attributes:
    - success
@@ -537,7 +556,7 @@ class get_endpoint_result:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('get_endpoint_result')
+    oprot.writeStructBegin('get_endpoint_for_user_result')
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.STRUCT, 0)
       self.success.write(oprot)

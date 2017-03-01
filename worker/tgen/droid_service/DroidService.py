@@ -113,6 +113,8 @@ class Client(Iface):
     iprot.readMessageEnd()
     if result.success is not None:
       return result.success
+    if result.ae is not None:
+      raise result.ae
     raise TApplicationException(TApplicationException.MISSING_RESULT, "get_package_name failed: unknown result")
 
   def get_endpoint(self, endpoint_id):
@@ -267,6 +269,9 @@ class Processor(Iface, TProcessor):
       msg_type = TMessageType.REPLY
     except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
       raise
+    except ApplicationException as ae:
+      msg_type = TMessageType.REPLY
+      result.ae = ae
     except Exception as ex:
       msg_type = TMessageType.EXCEPTION
       logging.exception(ex)
@@ -497,14 +502,17 @@ class get_package_name_result:
   """
   Attributes:
    - success
+   - ae
   """
 
   thrift_spec = (
     (0, TType.STRING, 'success', None, None, ), # 0
+    (1, TType.STRUCT, 'ae', (ApplicationException, ApplicationException.thrift_spec), None, ), # 1
   )
 
-  def __init__(self, success=None,):
+  def __init__(self, success=None, ae=None,):
     self.success = success
+    self.ae = ae
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -518,6 +526,12 @@ class get_package_name_result:
       if fid == 0:
         if ftype == TType.STRING:
           self.success = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.ae = ApplicationException()
+          self.ae.read(iprot)
         else:
           iprot.skip(ftype)
       else:
@@ -534,6 +548,10 @@ class get_package_name_result:
       oprot.writeFieldBegin('success', TType.STRING, 0)
       oprot.writeString(self.success)
       oprot.writeFieldEnd()
+    if self.ae is not None:
+      oprot.writeFieldBegin('ae', TType.STRUCT, 1)
+      self.ae.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -544,6 +562,7 @@ class get_package_name_result:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.success)
+    value = (value * 31) ^ hash(self.ae)
     return value
 
   def __repr__(self):
