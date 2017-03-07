@@ -1,11 +1,11 @@
 import atexit
 
-from logger import logger
-from master.settings import THRIFT_HOST, THRIFT_PORT
-from master.zk_master import MasterZkClient
+from hedroid.logger import logger
+from hedroid.master.settings import THRIFT_HOST, THRIFT_PORT
+from hedroid.master.zk_master import MasterZkClient
 
-from master.tgen.droid_keeper.ttypes import ConnParams, ApplicationException
-from master.tgen.droid_keeper import DroidKeeper
+from hedroid.master.tgen.droid_keeper.ttypes import ConnParams, ApplicationException
+from hedroid.master.tgen.droid_keeper import DroidKeeper
 
 from thrift.transport import TSocket
 from thrift.transport import TTransport

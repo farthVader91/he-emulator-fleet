@@ -6,9 +6,9 @@ from kazoo.exceptions import NoNodeError
 from kazoo.protocol.states import EventType
 from kazoo.recipe.watchers import ChildrenWatch, DataWatch
 
-from logger import logger
-from common_settings import ZK_HOST, ZK_PORT
-from worker.thrift_client import DroidClient
+from hedroid.logger import logger
+from hedroid.common_settings import ZK_HOST, ZK_PORT
+from hedroid.worker.thrift_client import DroidClient
 
 
 class MasterZkClient(object):

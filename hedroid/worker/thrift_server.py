@@ -2,13 +2,13 @@ import atexit
 
 import requests
 
-from logger import logger
-from worker.helpers import DroidCoordinator, DroidBuilder
-from worker.utils import get_config, get_public_hostname
-from worker.utils import get_package_name_from_url
+from hedroid.logger import logger
+from hedroid.worker.helpers import DroidCoordinator, DroidBuilder
+from hedroid.worker.utils import get_config, get_public_hostname
+from hedroid.worker.utils import get_package_name_from_url
 
-from worker.tgen.droid_service.ttypes import ConnParams, ApplicationException
-from worker.tgen.droid_service import DroidService
+from hedroid.worker.tgen.droid_service.ttypes import ConnParams, ApplicationException
+from hedroid.worker.tgen.droid_service import DroidService
 
 from thrift.transport import TSocket
 from thrift.transport import TTransport

@@ -4,8 +4,8 @@ import time
 
 import subprocess32 as subprocess
 
-from logger import logger
-from worker.utils import parse_manifest, download_to_temp
+from hedroid.logger import logger
+from hedroid.worker.utils import parse_manifest, download_to_temp
 
 
 class EmulatorExecutor(object):
@@ -34,6 +34,7 @@ class EmulatorExecutor(object):
             time.sleep(0.1)
 
     def start(self):
+        logger.debug('Starting emulator executor')
         cmd = ["emulator", "-port", self.port, "-avd", self.avd,
                "-no-boot-anim", "-nojni", "-netfast"]
         if os.getenv("NO_WINDOW"):

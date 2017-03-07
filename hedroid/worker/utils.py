@@ -9,8 +9,8 @@ import requests
 from requests.exceptions import ConnectTimeout
 import subprocess32 as subprocess
 
-from common_settings import ROOT_DIR
-from logger import logger
+from hedroid.common_settings import ROOT_DIR
+from hedroid.logger import logger
 
 
 def get_temp_apk_path():

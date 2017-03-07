@@ -2,9 +2,9 @@ import json
 
 from kazoo.client import KazooClient, KazooState
 
-from logger import logger
-from worker.utils import get_config, get_public_hostname
-from common_settings import ZK_HOST, ZK_PORT
+from hedroid.logger import logger
+from hedroid.worker.utils import get_config, get_public_hostname
+from hedroid.common_settings import ZK_HOST, ZK_PORT
 
 
 class DroidZkClient(object):

@@ -1,7 +1,7 @@
 import os
 
-from worker.emulator import Emulator
-from zk_droid import DroidZkClient
+from hedroid.worker.droid import Droid
+from hedroid.worker.zk_droid import DroidZkClient
 
 
 class DroidBuilder(object):
@@ -18,7 +18,8 @@ class DroidBuilder(object):
         return self
 
     def build(self):
-        return Emulator(port=self.port, avd=self.avd)
+        xvfb =
+        emulator = Emulator(port=self.port, avd=self.avd)
 
 
 class DroidCoordinator(object):
