@@ -1,3 +1,4 @@
+import os
 import atexit
 
 import requests
@@ -37,10 +38,9 @@ class DroidServiceHandler(object):
         config = get_config()
         builder = DroidBuilder()
         for droid in config['droids']:
-            if droid['port']:
-                builder.set_port(droid['port'])
-            if droid['avd']:
-                builder.set_avd(droid['avd'])
+            for key, value in droid.iteritems():
+                func = getattr(builder, "set_{}".format(key))
+                func(value)
             self.coordinator.add_droid(builder.build())
         # Start all endpoints now
         self.coordinator.setup()

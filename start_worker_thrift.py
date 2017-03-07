@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-from worker.thrift_server import start_server
+from hedroid.worker.thrift_server import start_server
 
 
 if __name__ == '__main__':

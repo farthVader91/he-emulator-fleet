@@ -35,6 +35,7 @@ class Droid(object):
                     proc.stop()
                 except:
                     pass
+            raise
 
     def stop(self):
         logger.debug('Stopping droid')
@@ -55,7 +56,7 @@ class DroidBuilder(object):
         self.dpi = 560
         self.dim = '720x1280x24'
         self.clip = '530x965+15+30'
-        self.ws_port = 6080
+        self.ws_port = '6080'
 
     def set_port(self, port):
         self.port = port
@@ -138,6 +139,8 @@ class DroidCoordinator(object):
                 self.start_droid(droid)
             except IndexError:
                 break
+            except:
+                pass
 
     def count(self):
         return len(self.initialised)

@@ -4,7 +4,15 @@
     "droids": [
         {
             "port": "5554",
-            "avd": "nexus6-android7"
+            "avd": "nexus6-android7",
+            "display": "1",
+            "ws_port": "6080"
+        },
+        {
+            "port": "5556",
+            "avd": "nexus6-android7-2",
+            "display": "2",
+            "ws_port": "6081"
         }
     ]
 }
