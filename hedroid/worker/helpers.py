@@ -1,13 +1,61 @@
 import os
 
-from hedroid.worker.droid import Droid
 from hedroid.worker.zk_droid import DroidZkClient
+from hedroid.logger import logger
+from hedroid.worker.xvfb import Xvfb
+from hedroid.worker.emulator import Emulator
+from hedroid.worker.vnc import X11VNC
+from hedroid.worker.websockify import Websockify
+
+
+class Droid(object):
+    def __init__(self, xvfb, emulator, x11vnc, websockify):
+        self.xvfb = xvfb
+        self.emulator = emulator
+        self.x11vnc = x11vnc
+        self.websockify = websockify
+
+    def start(self):
+        logger.debug('Starting droid')
+        started = []
+        try:
+            self.xvfb.start()
+            started.append(self.xvfb)
+            self.emulator.start()
+            started.append(self.emulator)
+            self.x11vnc.start()
+            started.append(self.x11vnc)
+            self.websockify.start()
+            started.append(self.websockify)
+            logger.debug('Droid ready!')
+        except:
+            logger.error('Failed to start droid. Reverting')
+            for proc in started:
+                try:
+                    proc.stop()
+                except:
+                    pass
+
+    def stop(self):
+        logger.debug('Stopping droid')
+        to_stop = [self.websockify, self.x11vnc, self.emulator, self.xvfb]
+        for proc in to_stop:
+            try:
+                proc.stop()
+            except:
+                pass
+        logger.debug('Droid stopped!')
 
 
 class DroidBuilder(object):
     def __init__(self):
         self.port = os.environ.get('ADB_PORT', '5554')
         self.avd = os.environ.get('AVD_NAME', 'nexus6-android7')
+        self.display = os.environ.get('DISPLAY_PORT', '1')
+        self.dpi = 560
+        self.dim = '720x1280x24'
+        self.clip = '530x965+15+30'
+        self.ws_port = 6080
 
     def set_port(self, port):
         self.port = port
@@ -17,9 +65,53 @@ class DroidBuilder(object):
         self.avd = avd
         return self
 
+    def set_display(self, display):
+        self.display = display
+        return self
+
+    def set_dpi(self, dpi):
+        self.dpi = dpi
+        return self
+
+    def set_dim(self, dim):
+        self.dim = dim
+        return self
+
+    def set_clip(self, clip):
+        self.clip = clip
+        return self
+
+    def set_ws_port(self, port):
+        self.ws_port = port
+        return self
+
     def build(self):
-        xvfb =
-        emulator = Emulator(port=self.port, avd=self.avd)
+        xvfb = Xvfb(
+            display=self.display,
+            dpi=self.dpi,
+            dim=self.dim,
+        )
+        emulator = Emulator(
+            port=self.port,
+            avd=self.avd,
+            display=self.display,
+        )
+        x11vnc = X11VNC(
+            display=self.display,
+            clip=self.clip,
+        )
+        websockify = Websockify(
+            source_port=self.ws_port,
+            target_port=x11vnc.get_rfbport(),
+        )
+        # Finally build droid
+        droid = Droid(
+            xvfb=xvfb,
+            emulator=emulator,
+            x11vnc=x11vnc,
+            websockify=websockify,
+        )
+        return droid
 
 
 class DroidCoordinator(object):

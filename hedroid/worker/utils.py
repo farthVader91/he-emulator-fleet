@@ -9,7 +9,7 @@ import requests
 from requests.exceptions import ConnectTimeout
 import subprocess32 as subprocess
 
-from hedroid.common_settings import ROOT_DIR
+from hedroid.common_settings import CONFIG_PATH
 from hedroid.logger import logger
 
 
@@ -101,10 +101,9 @@ def get_public_hostname():
 
 def get_config():
     if CachedGlobals.CONFIG is None:
-        config_path = os.path.join(ROOT_DIR, 'worker',  'config.json')
         err = "Config file not provided for worker"
-        assert os.path.exists(config_path), err
-        with open(config_path) as source:
+        assert os.path.exists(CONFIG_PATH), err
+        with open(CONFIG_PATH) as source:
             CachedGlobals.CONFIG = json.load(source)
 
     return deepcopy(CachedGlobals.CONFIG)

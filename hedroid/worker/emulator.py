@@ -6,20 +6,21 @@ import subprocess32 as subprocess
 
 from hedroid.logger import logger
 from hedroid.worker.utils import parse_manifest, download_to_temp
+from hedroid.worker.executor import Executor
 
 
-class EmulatorExecutor(object):
-    def __init__(self, port, avd, **kwargs):
+class EmulatorExecutor(Executor):
+    def __init__(self, port, avd, display, **kwargs):
+        super(EmulatorExecutor, self).__init__(port)
         self.port = port
         self.avd = avd
-
-        self._proc = None
+        self.display = display
 
     def adb_wait(self):
         logger.debug('Adb shell wait')
         cmd = ["adb", "-s", "emulator-{}".format(self.port),
                "wait-for-device"]
-        return subprocess.check_call(cmd, timeout=10)
+        return subprocess.check_call(cmd, timeout=20)
 
     def sys_boot_wait(self):
         logger.debug('Sys boot wait')
@@ -33,39 +34,34 @@ class EmulatorExecutor(object):
                 break
             time.sleep(0.1)
 
-    def start(self):
-        logger.debug('Starting emulator executor')
+    def _start(self):
+        # Set DISPLAY variable first
+        env = os.environ.copy()
+        if self.display:
+            env['DISPLAY'] = ':{}'.format(self.display)
         cmd = ["emulator", "-port", self.port, "-avd", self.avd,
-               "-no-boot-anim", "-nojni", "-netfast"]
+               "-no-boot-anim", "-nojni", "-netfast", "-gpu", "swiftshader",
+               "-qemu", "-enable-kvm"]
         if os.getenv("NO_WINDOW"):
             cmd.append("-no-window")
-        self._proc = subprocess.Popen(
+        proc = subprocess.Popen(
             cmd,
-            stdout=subprocess.PIPE,
+            env=env,
+            stdout=self.stdout_fd,
             stderr=subprocess.STDOUT,
             universal_newlines=True,
         )
         # Wait till boot
         self.adb_wait()
         self.sys_boot_wait()
-        return True
-
-    def stop(self):
-        logger.debug('Stopping emulator executor')
-        try:
-            self._proc.terminate()
-        except:
-            pass
-        try:
-            self._proc.kill()
-        except:
-            pass
+        return proc
 
 
 class Emulator(object):
-    def __init__(self, port=None, avd=None):
+    def __init__(self, port=None, avd=None, display=None):
         self.port = port or os.environ.get('ADB_PORT', '5554')
         self.avd = avd or os.environ.get('AVD_NAME', 'nexus6-android7')
+        self.display = display
 
         self.executor = None
         self.last_package_maniphest = None
@@ -73,7 +69,7 @@ class Emulator(object):
     def start(self):
         logger.debug('Starting emulator')
 
-        self.executor = EmulatorExecutor(self.port, self.avd)
+        self.executor = EmulatorExecutor(self.port, self.avd, self.display)
         self.executor.start()
         logger.debug('Emulator ready!')
 
