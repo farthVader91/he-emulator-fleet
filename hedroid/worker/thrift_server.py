@@ -8,6 +8,7 @@ from hedroid.logger import logger
 from hedroid.worker.helpers import DroidCoordinator, DroidBuilder
 from hedroid.worker.utils import get_config, get_public_hostname
 from hedroid.worker.utils import get_package_name_from_url
+from hedroid.worker.utils import restart_adb_server
 from hedroid.common_settings import VAR_DIR
 
 from hedroid.worker.tgen.droid_service.ttypes import ConnParams, ApplicationException
@@ -34,6 +35,7 @@ class DroidServiceHandler(object):
     def setup(self):
         logger.debug('Setting up dirs')
         self.setup_dirs()
+        restart_adb_server()
         logger.debug('Setting up droids')
         config = get_config()
         builder = DroidBuilder()
@@ -64,7 +66,7 @@ class DroidServiceHandler(object):
         endpoint = self.coordinator.get_droid(endpoint_id)
         cp = ConnParams()
         cp.host = get_public_hostname()
-        cp.port = endpoint.port
+        cp.port = endpoint.websockify.source_port
         return cp
 
     def run_operation(self, endpoint_id, operation, apk_url):
@@ -72,10 +74,10 @@ class DroidServiceHandler(object):
         try:
             endpoint = self.coordinator.get_droid(endpoint_id)
             if operation == 'install_apk':
-                return endpoint.install_apk_from_url(apk_url)
+                return endpoint.emulator.install_apk_from_url(apk_url)
             elif operation == 'install_and_start_apk':
-                endpoint.install_apk_from_url(apk_url)
-                return endpoint.start_last_package()
+                endpoint.emulator.install_apk_from_url(apk_url)
+                return endpoint.emulator.start_last_package()
             else:
                 raise Exception('Unsupported operation - {}'.format(operation))
         except Exception as err:

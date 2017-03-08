@@ -74,6 +74,17 @@ def get_package_name(path):
     return parse_manifest(path)['package']
 
 
+def restart_adb_server():
+    logger.debug('Restarting adb')
+    try:
+        subprocess.call(["adb", "kill-server"])
+    finally:
+        try:
+            subprocess.call(["adb", "start-server"])
+        except:
+            pass
+
+
 def is_open_port(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(2)
