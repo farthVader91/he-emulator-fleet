@@ -47,6 +47,10 @@ class Droid(object):
                 pass
         logger.debug('Droid stopped!')
 
+    def cleanup(self):
+        logger.debug('Cleaning up droid')
+        self.emulator.cleanup()
+
 
 class DroidBuilder(object):
     def __init__(self):
@@ -125,7 +129,7 @@ class DroidCoordinator(object):
 
     def start_droid(self, droid):
         droid.start()
-        zk_client = DroidZkClient()
+        zk_client = DroidZkClient(droid)
         zk_client.setup()
         self.initialised[zk_client.nodename] = {
             'droid': droid,
@@ -135,7 +139,7 @@ class DroidCoordinator(object):
     def setup(self):
         while True:
             try:
-		droid = self.droids_to_start.pop()
+                droid = self.droids_to_start.pop()
                 self.start_droid(droid)
             except IndexError:
                 break
@@ -165,3 +169,12 @@ class DroidCoordinator(object):
     def teardown(self):
         for instance_id in self.iter_droid_ids():
             self.stop_droid(instance_id)
+
+
+class DroidCoordinatorFactory(object):
+    _instance = None
+
+    def make_droid_coordinator(self):
+        if DroidCoordinatorFactory._instance is None:
+            DroidCoordinatorFactory._instance = DroidCoordinator()
+        return DroidCoordinatorFactory._instance

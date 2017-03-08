@@ -5,7 +5,7 @@ import requests
 import shutil
 
 from hedroid.logger import logger
-from hedroid.worker.helpers import DroidCoordinator, DroidBuilder
+from hedroid.worker.helpers import DroidCoordinatorFactory, DroidBuilder
 from hedroid.worker.utils import get_config, get_public_hostname
 from hedroid.worker.utils import get_package_name_from_url
 from hedroid.worker.utils import restart_adb_server
@@ -22,7 +22,8 @@ from thrift.server import TServer
 
 class DroidServiceHandler(object):
     def __init__(self):
-        self.coordinator = DroidCoordinator()
+        factory = DroidCoordinatorFactory()
+        self.coordinator = factory.make_droid_coordinator()
 
     def setup_dirs(self):
         # setup tmp dir

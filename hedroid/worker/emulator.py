@@ -117,6 +117,15 @@ class Emulator(object):
             raise Exception('No package installed previously')
         return self.start_package_activity(**self.last_package_maniphest)
 
+    def cleanup(self):
+        # Uninstall last installed package
+        if self.last_package_maniphest is not None:
+            package = self.last_package_maniphest['package']
+            self.uninstall_package(package)
+        # TODO: Goto Home screen
+        logger.debug('You are yet to implement "GOTO HOMESCREEN"')
+        return True
+
     def stop(self):
         logger.debug('Stopping emulator')
         self.executor.stop()
