@@ -17,22 +17,6 @@
             "ws_port": "6081",
             "clip": "580x1000+100+90",
             "dim": "768x1280x24"
-        },
-        {
-            "port": "5558",
-            "avd": "nexus4-android7-3",
-            "display": "3",
-            "ws_port": "6082",
-            "clip": "580x1000+100+90",
-            "dim": "768x1280x24"
-        },
-        {
-            "port": "5560",
-            "avd": "nexus4-android7-4",
-            "display": "4",
-            "ws_port": "6083",
-            "clip": "580x1000+100+90",
-            "dim": "768x1280x24"
         }
     ]
 }

@@ -143,8 +143,8 @@ class DroidCoordinator(object):
                 self.start_droid(droid)
             except IndexError:
                 break
-            except:
-                pass
+            except Exception as err:
+                import ipdb; ipdb.set_trace()
 
     def count(self):
         return len(self.initialised)
