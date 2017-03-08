@@ -4,6 +4,7 @@ import time
 import subprocess32 as subprocess
 
 from hedroid.logger import logger
+from hedroid.common_settings import CONFIG_DIR, DEBUG
 from hedroid.worker.executor import Executor
 
 
@@ -25,8 +26,15 @@ class WebsockifyExecutor(Executor):
                 break
 
     def _start(self):
-        cmd = ["websockify", ":{}".format(self.source_port),
-               ":{}".format(self.target_port)]
+        cmd = ["websockify"]
+        if not DEBUG:
+            cmd = ["websockify",
+                   "--cert", os.path.join(CONFIG_DIR, "hackerearth.crt"),
+                   "--key", os.path.join(CONFIG_DIR, "hackerearth.key"),
+                   "--ssl-only"]
+
+        cmd.extend([":{}".format(self.source_port),
+                    ":{}".format(self.target_port)])
         proc = subprocess.Popen(
             cmd,
             stdout=self.stdout_fd,

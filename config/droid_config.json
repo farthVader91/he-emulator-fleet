@@ -1,0 +1,22 @@
+{
+	"thrift_host": "0.0.0.0",
+	"thrift_port": "9090",
+    "droids": [
+        {
+            "port": "5554",
+            "avd": "nexus4-android7",
+            "display": "1",
+            "ws_port": "6080",
+            "clip": "580x1000+100+90",
+            "dim": "768x1280x24"
+        },
+        {
+            "port": "5556",
+            "avd": "nexus4-android7-2",
+            "display": "2",
+            "ws_port": "6081",
+            "clip": "580x1000+100+90",
+            "dim": "768x1280x24"
+        }
+    ]
+}

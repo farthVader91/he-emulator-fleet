@@ -33,6 +33,7 @@ class X11VNCExecutor(Executor):
     def _start(self):
         cmd = ["x11vnc", "-forever", "-rfbport", str(self.rfb_port),
                "-display", ":{}".format(self.display),
+               "-noxfixes", "-nowf", "-ncache", "10",
                "-clip", self.clip, "-flag", self._portfile_p]
         # Remove portfile if it previously exists
         try:
