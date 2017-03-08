@@ -9,7 +9,7 @@ import requests
 from requests.exceptions import ConnectTimeout
 import subprocess32 as subprocess
 
-from hedroid.common_settings import CONFIG_PATH
+from hedroid.common_settings import CONFIG_PATH, HOSTNAME
 from hedroid.logger import logger
 
 
@@ -88,13 +88,16 @@ class CachedGlobals:
 
 def get_public_hostname():
     if CachedGlobals.HOSTNAME is None:
-        url = "http://169.254.169.254/latest/meta-data/public-host"
-        try:
-            resp = requests.get(url, timeout=(3, 2))
-            if resp.status == 200:
-                CachedGlobals.HOSTNAME = resp.text
-        except ConnectTimeout:
-            CachedGlobals.HOSTNAME = socket.gethostname()
+	if HOSTNAME is not None:
+            CachedGlobals.HOSTNAME = HOSTNAME
+	else:
+            url = "http://169.254.169.254/latest/meta-data/public-host"
+            try:
+                resp = requests.get(url, timeout=(3, 2))
+                if resp.status == 200:
+                    CachedGlobals.HOSTNAME = resp.text
+            except ConnectTimeout:
+                CachedGlobals.HOSTNAME = socket.gethostname()
 
     return CachedGlobals.HOSTNAME
 

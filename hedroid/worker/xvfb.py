@@ -22,8 +22,13 @@ class XvfbExecutor(Executor):
         logger.debug('xdpyinfo wait')
         cmd = ["xdpyinfo", "-display", ":{}".format(self.display)]
         while True:
-            output = subprocess.check_output(
-                cmd, timeout=1, universal_newlines=True)
+            logger.debug('trying again from xdpyinfo')
+            try:
+                output = subprocess.check_output(
+                    cmd, timeout=3, universal_newlines=True)
+            except subprocess.CalledProcessError:
+                time.sleep(0.1)
+                continue
             if not self.xdpyinfo_p.search(output):
                 break
             time.sleep(0.1)

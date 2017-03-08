@@ -52,7 +52,7 @@ class EmulatorExecutor(Executor):
             universal_newlines=True,
         )
         # Wait till boot
-        self.adb_wait()
+        logger.debug(self.adb_wait())
         self.sys_boot_wait()
         return proc
 

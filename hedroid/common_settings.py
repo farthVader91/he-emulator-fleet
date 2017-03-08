@@ -5,7 +5,9 @@ VAR_DIR = os.path.join(ROOT_DIR, 'var')
 CONFIG_DIR = os.path.join(ROOT_DIR, 'config')
 CONFIG_PATH = os.path.join(CONFIG_DIR, 'droid_config.json')
 
-ZK_HOST = "localhost"
+HOSTNAME = 'emulator.hackerearth.com'
+
+ZK_HOST = "he-zookeeper-vpc.hackerearth.com"
 ZK_PORT = "2181"
 
-DEBUG = True
+DEBUG = False

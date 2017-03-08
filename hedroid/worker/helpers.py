@@ -135,7 +135,7 @@ class DroidCoordinator(object):
     def setup(self):
         while True:
             try:
-                droid = self.droids_to_start.pop()
+		droid = self.droids_to_start.pop()
                 self.start_droid(droid)
             except IndexError:
                 break
