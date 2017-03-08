@@ -1,6 +1,7 @@
 import json
 
 from kazoo.client import KazooClient, KazooState
+from kazoo.recipe.watchers import DataWatch
 from kazoo.protocol.states import EventType
 
 from hedroid.logger import logger

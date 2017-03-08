@@ -8,7 +8,6 @@ from hedroid.logger import logger
 from hedroid.worker.helpers import DroidCoordinatorFactory, DroidBuilder
 from hedroid.worker.utils import get_config, get_public_hostname
 from hedroid.worker.utils import get_package_name_from_url
-from hedroid.worker.utils import restart_adb_server
 from hedroid.common_settings import VAR_DIR
 
 from hedroid.worker.tgen.droid_service.ttypes import ConnParams, ApplicationException
@@ -36,7 +35,6 @@ class DroidServiceHandler(object):
     def setup(self):
         logger.debug('Setting up dirs')
         self.setup_dirs()
-        restart_adb_server()
         logger.debug('Setting up droids')
         config = get_config()
         builder = DroidBuilder()

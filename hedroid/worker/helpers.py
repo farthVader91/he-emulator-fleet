@@ -1,6 +1,7 @@
 import os
 
 from hedroid.worker.zk_droid import DroidZkClient
+from hedroid.worker.utils import restart_adb_server
 from hedroid.logger import logger
 from hedroid.worker.xvfb import Xvfb
 from hedroid.worker.emulator import Emulator
@@ -137,6 +138,7 @@ class DroidCoordinator(object):
         }
 
     def setup(self):
+        restart_adb_server()
         while True:
             try:
                 droid = self.droids_to_start.pop()
