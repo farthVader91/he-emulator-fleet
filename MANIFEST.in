@@ -1,0 +1,11 @@
+include requirements.txt
+include hedroid/common_settings.py
+include hedroid/__init__.py
+include hedroid/logger.py
+include hedroid/master/__init__.py
+include hedroid/master/thrift_client.py
+recursive-include hedroid/master/tgen *
+recursive-exclude hedroid/worker *
+exclude hedroid/master/zk_master.py
+exclude hedroid/master/thrift_server.py
+exclude hedroid/master/settings.py
