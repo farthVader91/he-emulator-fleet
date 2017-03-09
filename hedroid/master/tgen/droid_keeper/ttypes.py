@@ -113,17 +113,20 @@ class ConnParams:
   Attributes:
    - host
    - port
+   - password
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'host', None, None, ), # 1
     (2, TType.STRING, 'port', None, None, ), # 2
+    (3, TType.STRING, 'password', None, None, ), # 3
   )
 
-  def __init__(self, host=None, port=None,):
+  def __init__(self, host=None, port=None, password=None,):
     self.host = host
     self.port = port
+    self.password = password
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -144,6 +147,11 @@ class ConnParams:
           self.port = iprot.readString()
         else:
           iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRING:
+          self.password = iprot.readString()
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -162,6 +170,10 @@ class ConnParams:
       oprot.writeFieldBegin('port', TType.STRING, 2)
       oprot.writeString(self.port)
       oprot.writeFieldEnd()
+    if self.password is not None:
+      oprot.writeFieldBegin('password', TType.STRING, 3)
+      oprot.writeString(self.password)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -173,6 +185,7 @@ class ConnParams:
     value = 17
     value = (value * 31) ^ hash(self.host)
     value = (value * 31) ^ hash(self.port)
+    value = (value * 31) ^ hash(self.password)
     return value
 
   def __repr__(self):

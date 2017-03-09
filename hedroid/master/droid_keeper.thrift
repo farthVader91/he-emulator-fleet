@@ -7,6 +7,7 @@ struct DroidRequest {
 struct ConnParams {
   1: string host,
   2: string port,
+  3: optional string password,
 }
 
 exception ApplicationException {

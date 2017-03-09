@@ -2,6 +2,7 @@ import re
 import json
 import os
 import socket
+import uuid
 from copy import deepcopy
 from tempfile import NamedTemporaryFile
 
@@ -9,7 +10,7 @@ import requests
 from requests.exceptions import ConnectTimeout
 import subprocess32 as subprocess
 
-from hedroid.common_settings import CONFIG_PATH, HOSTNAME
+from hedroid.common_settings import CONFIG_PATH, HOSTNAME, DEBUG
 from hedroid.logger import logger
 
 
@@ -121,6 +122,12 @@ def get_config():
             CachedGlobals.CONFIG = json.load(source)
 
     return deepcopy(CachedGlobals.CONFIG)
+
+
+def generate_password():
+    if DEBUG:
+        return "youknowthis"
+    return uuid.uuid4().hex
 
 
 if __name__ == '__main__':

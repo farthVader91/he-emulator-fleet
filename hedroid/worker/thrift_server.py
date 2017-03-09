@@ -1,7 +1,6 @@
 import os
 import atexit
 
-import requests
 import shutil
 
 from hedroid.logger import logger
@@ -10,7 +9,8 @@ from hedroid.worker.utils import get_config, get_public_hostname
 from hedroid.worker.utils import get_package_name_from_url
 from hedroid.common_settings import VAR_DIR
 
-from hedroid.worker.tgen.droid_service.ttypes import ConnParams, ApplicationException
+from hedroid.worker.tgen.droid_service.ttypes import ConnParams
+from hedroid.worker.tgen.droid_service.ttypes import ApplicationException
 from hedroid.worker.tgen.droid_service import DroidService
 
 from thrift.transport import TSocket
@@ -66,6 +66,7 @@ class DroidServiceHandler(object):
         cp = ConnParams()
         cp.host = get_public_hostname()
         cp.port = endpoint.websockify.source_port
+        cp.password = endpoint.x11vnc.password
         return cp
 
     def run_operation(self, endpoint_id, operation, apk_url):
@@ -110,6 +111,7 @@ def start_server():
     server = TServer.TSimpleServer(processor, transport, tfactory, pfactory)
     handler.pre_server_start_log()
     server.serve()
+
 
 if __name__ == '__main__':
     start_server()

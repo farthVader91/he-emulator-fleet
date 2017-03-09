@@ -59,6 +59,7 @@ class DroidKeeperHandler(object):
         cpars = ConnParams()
         cpars.host = endpoint_cpars.host
         cpars.port = endpoint_cpars.port
+        cpars.password = endpoint_cpars.password
         return cpars
 
     def interact_with_endpoint(self, dr):

@@ -1,7 +1,8 @@
 import os
 
+from hedroid.common_settings import DEBUG
 from hedroid.worker.zk_droid import DroidZkClient
-from hedroid.worker.utils import restart_adb_server
+from hedroid.worker.utils import restart_adb_server, generate_password
 from hedroid.logger import logger
 from hedroid.worker.xvfb import Xvfb
 from hedroid.worker.emulator import Emulator
@@ -50,7 +51,10 @@ class Droid(object):
 
     def cleanup(self):
         logger.debug('Cleaning up droid')
+        # Cleanup emulator
         self.emulator.cleanup()
+        # Cycle password for vnc server
+        self.x11vnc.cycle_password()
 
 
 class DroidBuilder(object):
@@ -105,6 +109,7 @@ class DroidBuilder(object):
         x11vnc = X11VNC(
             display=self.display,
             clip=self.clip,
+            password=generate_password(),
         )
         websockify = Websockify(
             source_port=self.ws_port,
@@ -146,7 +151,10 @@ class DroidCoordinator(object):
             except IndexError:
                 break
             except Exception as err:
-                import ipdb; ipdb.set_trace()
+                print err
+                if DEBUG:
+                    import ipdb
+                    ipdb.set_trace()
 
     def count(self):
         return len(self.initialised)

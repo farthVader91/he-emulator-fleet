@@ -6,14 +6,16 @@ import subprocess32 as subprocess
 from hedroid.logger import logger
 from hedroid.common_settings import VAR_DIR
 from hedroid.worker.executor import Executor
+from hedroid.worker.utils import generate_password
 
 
 class X11VNCExecutor(Executor):
-    def __init__(self, display, rfb_port, clip):
+    def __init__(self, display, rfb_port, clip, password):
         super(X11VNCExecutor, self).__init__(display)
         self.display = display
         self.rfb_port = rfb_port
         self.clip = clip
+        self.password = password
 
         self._portfile_p = os.path.join(VAR_DIR, "vnc-port-{}".format(display))
 
@@ -33,8 +35,10 @@ class X11VNCExecutor(Executor):
     def _start(self):
         cmd = ["x11vnc", "-forever", "-rfbport", str(self.rfb_port),
                "-display", ":{}".format(self.display),
+               "-noxdamage", "-xkb", "-noscr",
                "-noxfixes", "-nowf", "-ncache", "10",
-               "-clip", self.clip, "-flag", self._portfile_p]
+               "-clip", self.clip, "-flag", self._portfile_p,
+               "-passwd", self.password]
         # Remove portfile if it previously exists
         try:
             os.remove(self._portfile_p)
@@ -60,9 +64,10 @@ class X11VNCExecutor(Executor):
 
 
 class X11VNC(object):
-    def __init__(self, display=None, clip=None):
+    def __init__(self, display=None, clip=None, password="youknowthis"):
         self.display = display or os.environ.get('DISPLAY_PORT', '1')
         self.clip = clip or '530x965+15+30'
+        self.password = password
 
         self.executor = None
 
@@ -72,9 +77,22 @@ class X11VNC(object):
     def start(self):
         logger.debug('Starting X11VNC')
 
-        self.executor = X11VNCExecutor(self.display, self.get_rfbport(), self.clip)
+        self.executor = X11VNCExecutor(
+            self.display, self.get_rfbport(), self.clip, self.password)
         self.executor.start()
         logger.debug('X11VNC Ready!')
+
+    def cycle_password(self):
+        logger.debug('Cycling passwords for x11vnc')
+        # Set new password
+        self.password = generate_password()
+        # Stop the server
+        self.executor.stop()
+        self.executor = X11VNCExecutor(
+            self.display, self.get_rfbport(), self.clip, self.password)
+        # Start the server again
+        self.executor.start()
+        logger.debug('Password cycle complete!')
 
     def stop(self):
         logger.debug('Stopping X11VNC')
