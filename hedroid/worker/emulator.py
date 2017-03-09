@@ -117,13 +117,31 @@ class Emulator(object):
             raise Exception('No package installed previously')
         return self.start_package_activity(**self.last_package_maniphest)
 
+    def flush_activity_stack(self):
+        logger.debug('Flushing activity stack')
+        cmd = ["adb", "-s", "emulator-{}".format(self.port),
+               "shell", "am", "stack", "remove", "1"]
+        return subprocess.call(cmd, timeout=5)
+
+    def _get_home_screen_activity_uri(self):
+        # For now we hardcode the Activity URI for the AVDs
+        # that are being used.
+        return "com.android.launcher3/com.android.launcher3.Launcher"
+
+    def goto_home_screen(self):
+        logger.debug('Sending intent to goto home screen')
+        cmd = ["adb", "-s", "emulator-{}".format(self.port),
+               "shell", "am", "start", "-W",
+               self._get_home_screen_activity_uri()]
+        return subprocess.call(cmd, timeout=5)
+
     def cleanup(self):
         # Uninstall last installed package
         if self.last_package_maniphest is not None:
             package = self.last_package_maniphest['package']
             self.uninstall_package(package)
-        # TODO: Goto Home screen
-        logger.debug('You are yet to implement "GOTO HOMESCREEN"')
+        self.flush_activity_stack()
+        self.goto_home_screen()
         return True
 
     def stop(self):
