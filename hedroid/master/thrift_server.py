@@ -1,10 +1,12 @@
 import atexit
 
 from hedroid.logger import logger
+from hedroid.constants import ErrorCode
 from hedroid.master.settings import THRIFT_HOST, THRIFT_PORT
 from hedroid.master.zk_master import MasterZkClient
 
 from hedroid.master.tgen.droid_keeper.ttypes import ConnParams, ApplicationException
+from hedroid.master.tgen.droid_keeper.ttypes import ErrCode
 from hedroid.master.tgen.droid_keeper import DroidKeeper
 
 from thrift.transport import TSocket
@@ -31,6 +33,7 @@ class DroidKeeperHandler(object):
         if droid is None:
             exc = ApplicationException()
             exc.msg = 'No droids available'
+            exc.code = ErrCode.NO_DROIDS_AVAIABLE
             raise exc
         try:
             return droid.get_package_name(apk_url)

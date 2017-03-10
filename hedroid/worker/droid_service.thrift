@@ -1,3 +1,8 @@
+enum ErrCode {
+  DEFAULT = 0,
+  NO_DROIDS_AVAILABLE = 1,
+}
+
 struct ConnParams {
   1: string host,
   2: string port,
@@ -5,7 +10,8 @@ struct ConnParams {
 }
 
 exception ApplicationException {
-  1: string msg
+  1: string msg,
+  2: optional i32 code = ErrCode.DEFAULT,
 }
 
 service DroidService {

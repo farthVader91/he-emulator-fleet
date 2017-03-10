@@ -1,3 +1,8 @@
+enum ErrCode {
+  DEFAULT = 0,
+  NO_DROIDS_AVAILABLE = 1,
+}
+
 struct DroidRequest {
   1: string user,
   2: optional string apk_url,
@@ -11,7 +16,8 @@ struct ConnParams {
 }
 
 exception ApplicationException {
-  1: string msg
+  1: string msg,
+  2: optional i32 code = ErrCode.DEFAULT,
 }
 
 service DroidKeeper {
