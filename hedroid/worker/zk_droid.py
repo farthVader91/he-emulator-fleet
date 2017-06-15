@@ -1,4 +1,5 @@
 import json
+import sys
 
 from kazoo.client import KazooClient, KazooState
 from kazoo.recipe.watchers import DataWatch
@@ -26,6 +27,7 @@ class DroidZkClient(object):
             logger.debug('connected...')
         elif state == KazooState.LOST:
             logger.debug('connection lost...')
+            sys.exit()
         elif state == KazooState.SUSPENDED:
             logger.debug('connection suspended...')
 
