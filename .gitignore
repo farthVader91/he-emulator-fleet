@@ -2,3 +2,4 @@
 var/*
 dist/
 *egg-info*
+config/droid_config.json

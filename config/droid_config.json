@@ -1,6 +1,6 @@
 {
 	"thrift_host": "0.0.0.0",
-	"thrift_port": "9090",
+	"thrift_port": "9091",
     "droids": [
         {
             "port": "5554",
@@ -15,6 +15,38 @@
             "avd": "nexus4-android7-2",
             "display": "2",
             "ws_port": "6081",
+            "clip": "580x1000+100+90",
+            "dim": "768x1280x24"
+        },
+        {
+            "port": "5558",
+            "avd": "nexus4-android7-3",
+            "display": "3",
+            "ws_port": "6082",
+            "clip": "580x1000+100+90",
+            "dim": "768x1280x24"
+        },
+        {
+            "port": "5560",
+            "avd": "nexus4-android7-4",
+            "display": "4",
+            "ws_port": "6083",
+            "clip": "580x1000+100+90",
+            "dim": "768x1280x24"
+        },
+        {
+            "port": "5562",
+            "avd": "nexus4-android7-5",
+            "display": "5",
+            "ws_port": "6084",
+            "clip": "580x1000+100+90",
+            "dim": "768x1280x24"
+        },
+        {
+            "port": "5564",
+            "avd": "nexus4-android7-6",
+            "display": "6",
+            "ws_port": "6085",
             "clip": "580x1000+100+90",
             "dim": "768x1280x24"
         }

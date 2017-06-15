@@ -1,11 +1,11 @@
 import atexit
 
 from hedroid.logger import logger
-from hedroid.constants import ErrorCode
 from hedroid.master.settings import THRIFT_HOST, THRIFT_PORT
 from hedroid.master.zk_master import MasterZkClient
 
-from hedroid.master.tgen.droid_keeper.ttypes import ConnParams, ApplicationException
+from hedroid.master.tgen.droid_keeper.ttypes import ConnParams
+from hedroid.master.tgen.droid_keeper.ttypes import ApplicationException
 from hedroid.master.tgen.droid_keeper.ttypes import ErrCode
 from hedroid.master.tgen.droid_keeper import DroidKeeper
 
